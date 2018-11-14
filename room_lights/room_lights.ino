@@ -12,8 +12,8 @@
 
 #include <math.h>       /* floor */
 
-#define MIC_PIN 9
-#define DATA_PIN 6
+#define MIC_PIN 7
+#define DATA_PIN 12
 #define CLOCK_PIN 13
 
 #define RAND_MAX 255

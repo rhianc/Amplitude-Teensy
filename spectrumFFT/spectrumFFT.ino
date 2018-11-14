@@ -15,6 +15,7 @@
 #include <SD.h>
 #include <SPI.h>
 #include <Adafruit_NeoPixel.h>
+#include "FastLED.h"
 // The display size and color to use
 const unsigned int matrix_width = 60;
 //const unsigned int matrix_height = 32;
@@ -24,6 +25,9 @@ const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 const float dynamicRange = 40.0; // total range to display, in decibels
 const float linearBlend = 0.3;   // useful range is 0 to 0.7
+#define NUM_LEDS 150
+#define BIN_WIDTH 3
+CRGB leds[NUM_LEDS];
 
 /*
 // OctoWS2811 objects
@@ -40,11 +44,9 @@ const int POWER_LED_PIN = 13;
 
 //Adafruit Neopixel object
 const int NEO_PIXEL_PIN = 12;           // Output pin for neo pixels.
-const int NEO_PIXEL_COUNT = 60;         // Number of neo pixels.  You should be able to increase this without
+const int NUM_BINS = floor(NUM_LEDS/BIN_WIDTH);         // Number of neo pixels.  You should be able to increase this without
                                        // any other changes to the program.
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NEO_PIXEL_COUNT*4, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
-uint32_t myColor = pixels.Color(255, 0, 255);
-
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // Audio library objects
 AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       //xy=99,55
@@ -61,13 +63,13 @@ float thresholdVertical[max_height];
 // to use for each horizontal pixel.  Because humans hear
 // in octaves and FFT bins are linear, the low frequencies
 // use a small number of bins, higher frequencies use more.
-int frequencyBinsHorizontal[NEO_PIXEL_COUNT] = {
+int frequencyBinsHorizontal[NUM_BINS] = {
    1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
    2,  2,  2,  2,  2,  2,  2,  2,  2,  3,
    3,  3,  3,  3,  4,  4,  4,  4,  4,  5,
    5,  5,  6,  6,  6,  7,  7,  7,  8,  8,
    9,  9, 10, 10, 11, 12, 12, 13, 14, 15,
-  15, 16, 17, 18, 19, 20, 22, 23, 24, 25
+//  15, 16, 17, 18, 19, 20, 22, 23, 24, 25
 };
 
 
@@ -76,13 +78,17 @@ int frequencyBinsHorizontal[NEO_PIXEL_COUNT] = {
 void setup() {
   // the audio library needs to be given memory to start working
   AudioMemory(12);
-
+  Serial.begin(9600);
+  Serial.println("hello");
+//  writeFrequencyBinsHorizontal();
   // compute the vertical thresholds before starting
   computeVerticalLevels();
-
+//  color_spectrum();
+//  FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
   // turn on the display
   pixels.begin();
   pixels.show();
+//  FastLED.show();
 }
 
 // A simple xy() function to turn display matrix coordinates
@@ -108,21 +114,24 @@ void loop() {
     // freqBin counts which FFT frequency data has been used,
     // starting at low frequency
     freqBin = 0;
-    for (x=0; x < NEO_PIXEL_COUNT; x++) {
+    for (x=0; x < NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
 
       // uncomment to see the spectrum in Arduino's Serial Monitor
-       //Serial.println(level);
+      Serial.println(level);
       if (level>0.05) {
-          pixels.setPixelColor(4*x,pixels.Color(240*level,0,120*level));
-          pixels.setPixelColor(4*x-1,pixels.Color(240*level,0,120*level));
-          pixels.setPixelColor(4*x-2,pixels.Color(240*level,0,120*level));
-          pixels.setPixelColor(4*x-3,pixels.Color(240*level,0,120*level));
+          for(int i=0;i<BIN_WIDTH;i++){
+            pixels.setPixelColor(BIN_WIDTH*x - i,pixels.Color(240*level,0,120*level));
+//            int j = BIN_WIDTH*x - i;
+//            float number = j * 255;
+//            float number1 = number / NUM_LEDS;
+//            float number2 = floor(number1);
+//            leds[j] = CHSV(number2,255,255);
+          }
 
           
         } else {
-          
           uint32_t value = pixels.getPixelColor(4*x);
           int r = 0;
           int g = 0;
@@ -130,11 +139,20 @@ void loop() {
           r = getRedValueFromColor(value);
           g = getGreenValueFromColor(value);
           b = getBlueValueFromColor(value);
-          Serial.println(r);
-          pixels.setPixelColor(4*x,r*0.8,0,b*0.8);
-          pixels.setPixelColor(4*x-1,r*0.8,0,b*0.8);
-          pixels.setPixelColor(4*x-2,r*0.8,0,b*0.8);
-          pixels.setPixelColor(4*x-3,r*0.8,0,b*0.8);
+//          CRGB led = leds[BIN_WIDTH*x];
+//          int red = led.red;
+//          int blue = led.blue;
+//          int green = led.green;
+//          int val = max(red,max(blue,green));
+//          Serial.println(val);
+          for(int i=0;i<BIN_WIDTH;i++){
+            pixels.setPixelColor(BIN_WIDTH*x - i,r*0.8,0,b*0.8);
+//            int j = BIN_WIDTH*x - i;
+//            float number = j * 255;
+//            float number1 = number / NUM_LEDS;
+//            float number2 = floor(number1);
+//            leds[j] = CHSV(number2,255,floor(val*0.8));
+          }
           
          
         }
@@ -153,6 +171,7 @@ void loop() {
       freqBin = freqBin + frequencyBinsHorizontal[x];
     }
     // after all pixels set, show them all at the same instant
+//    FastLED.show();
     pixels.show();
     // Serial.println();
   }
@@ -174,6 +193,12 @@ void computeVerticalLevels() {
   }
 }
 
+void writeFrequencyBinsHorizontal(){
+  for (int i=0; i < NUM_BINS; i++){
+    frequencyBinsHorizontal[i] = 0;
+  }
+}
+
 void unPackRGB(uint32_t color, int &r, int &g,  int &b){
   r = (color >>16)&0xff;
   g = (color >> 8)&0xff;
@@ -189,4 +214,13 @@ uint8_t getGreenValueFromColor(uint32_t c) {
 
 uint8_t getBlueValueFromColor(uint32_t c) {
     return c&0xff;
+}
+
+void color_spectrum() {
+  for (int i = 0;i < NUM_LEDS; i++){
+    float number = i * 255;
+    float number1 = number / NUM_LEDS;
+    float number2 = floor(number1);
+    leds[i] = CHSV(number2,255,255);
+  }
 }
