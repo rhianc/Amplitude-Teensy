@@ -27,6 +27,7 @@ const float dynamicRange = 40.0; // total range to display, in decibels
 const float linearBlend = 0.3;   // useful range is 0 to 0.7
 #define NUM_LEDS 150
 #define BIN_WIDTH 3
+float decay = 0.7;
 CRGB leds[NUM_LEDS];
 
 /*
@@ -83,11 +84,11 @@ void setup() {
 //  writeFrequencyBinsHorizontal();
   // compute the vertical thresholds before starting
   computeVerticalLevels();
-//  color_spectrum();
-//  FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
+  color_spectrum();
+  FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
   // turn on the display
-  pixels.begin();
-  pixels.show();
+//  pixels.begin();
+//  pixels.show();
 //  FastLED.show();
 }
 
@@ -120,38 +121,25 @@ void loop() {
 
       // uncomment to see the spectrum in Arduino's Serial Monitor
       Serial.println(level);
-      if (level>0.05) {
+      if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
-            pixels.setPixelColor(BIN_WIDTH*x - i,pixels.Color(240*level,0,120*level));
-//            int j = BIN_WIDTH*x - i;
-//            float number = j * 255;
-//            float number1 = number / NUM_LEDS;
-//            float number2 = floor(number1);
-//            leds[j] = CHSV(number2,255,255);
+//            pixels.setPixelColor(BIN_WIDTH*x - i,pixels.Color(240*level,0,120*level));
+            int j = BIN_WIDTH*x - i;
+            float number = j * 255;
+            float number1 = number / NUM_LEDS;
+            float number2 = floor(number1);
+            leds[j] = CHSV(number2,255,255);
           }
 
           
         } else {
-          uint32_t value = pixels.getPixelColor(4*x);
-          int r = 0;
-          int g = 0;
-          int b = 0;
-          r = getRedValueFromColor(value);
-          g = getGreenValueFromColor(value);
-          b = getBlueValueFromColor(value);
-//          CRGB led = leds[BIN_WIDTH*x];
-//          int red = led.red;
-//          int blue = led.blue;
-//          int green = led.green;
-//          int val = max(red,max(blue,green));
-//          Serial.println(val);
           for(int i=0;i<BIN_WIDTH;i++){
-            pixels.setPixelColor(BIN_WIDTH*x - i,r*0.8,0,b*0.8);
-//            int j = BIN_WIDTH*x - i;
+//            pixels.setPixelColor(BIN_WIDTH*x - i,r*0.8,0,b*0.8);
+            int j = BIN_WIDTH*x - i;
 //            float number = j * 255;
 //            float number1 = number / NUM_LEDS;
 //            float number2 = floor(number1);
-//            leds[j] = CHSV(number2,255,floor(val*0.8));
+            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
           }
           
          
@@ -171,8 +159,8 @@ void loop() {
       freqBin = freqBin + frequencyBinsHorizontal[x];
     }
     // after all pixels set, show them all at the same instant
-//    FastLED.show();
-    pixels.show();
+    FastLED.show();
+//    pixels.show();
     // Serial.println();
   }
 }
@@ -221,6 +209,6 @@ void color_spectrum() {
     float number = i * 255;
     float number1 = number / NUM_LEDS;
     float number2 = floor(number1);
-    leds[i] = CHSV(number2,255,255);
+    leds[i] = CHSV(number2,255,0);
   }
 }
