@@ -12,7 +12,7 @@
 
 #include <math.h>       /* floor */
 
-
+#define MIC_PIN 9
 #define DATA_PIN 6
 #define CLOCK_PIN 13
 
@@ -28,6 +28,7 @@
 #define blue CHSV(160, 255, 255)
 #define purple CHSV(180, 255, 255)
 #define pink CHSV(250, 255, 255) 
+
 
 // Define the array of leds
 CRGB fleds[NUM_LEDS * fraction_of_spectrum];
@@ -206,20 +207,20 @@ class LightStarter{
       }
       
     public: void bomber(){
-      for (int i = 0; i< NUM_LEDS/5; i++){
+      for (int i = 0; i< int(NUM_LEDS/5); i++){
         if(i%2 == 0){
-          leds[5*i] = CHSV(10, 255, 255);
-          leds[5*i+1] = CHSV(10, 255, 255);
-          leds[5*i+2] = CHSV(10, 255, 255);
-          leds[5*i+3] = CHSV(10, 255, 255);
-          leds[5*i+4] = CHSV(10, 255, 255);
+          leds[5*i] = CRGB(50, 255, 0);
+          leds[5*i+1] = CRGB(50, 255, 0);
+          leds[5*i+2] = CRGB(50, 255, 0);
+          leds[5*i+3] = CRGB(50, 255, 0);
+          leds[5*i+4] = CRGB(50, 255, 0);
           }
         else{
-          leds[5*i] = CHSV(255 ,0,1);
-          leds[5*i+1] = CHSV(255 ,0,1);
-          leds[5*i+2] = CHSV(255 ,0,1);
-          leds[5*i+3] = CHSV(255 ,0,1);
-          leds[5*i+4] = CHSV(255 ,0,1);
+          leds[5*i] = CRGB(1 ,1,1);
+          leds[5*i+1] = CRGB(1 ,1,1);
+          leds[5*i+2] = CRGB(1 ,1,1);
+          leds[5*i+3] = CRGB(1 ,1,1);
+          leds[5*i+4] = CRGB(1 ,1,1);
           }
         }
       }
@@ -247,7 +248,7 @@ void setup() {
   // FastLED.addLeds<TM1803, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<TM1804, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<TM1809, DATA_PIN, RGB>(leds, NUM_LEDS);
-  // FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
+//  FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<WS2812, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
@@ -344,7 +345,7 @@ class LightChanger{
 void loop() {
   lightChanger.merge_half_wrap();
   FastLED.show();
-  delay(80);
+  delay(100);
 }
 
 
