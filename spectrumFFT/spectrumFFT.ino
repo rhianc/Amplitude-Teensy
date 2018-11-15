@@ -54,7 +54,7 @@ AudioConnection          patchCord1(adc1, fft);
 // use a small number of bins, higher frequencies use more.
 
 //This is the original array, curve = 0.7964*e^(0.0583x)
-//int frequencyBinsHorizontal[50] = {
+//int frequencyBinsHorizontal[60] = {
 //   1,  1,  1,  1,  1,
 //   1,  1,  1,  1,  1,
 //   2,  2,  2,  2,  2,
@@ -65,6 +65,8 @@ AudioConnection          patchCord1(adc1, fft);
 //   7,  7,  7,  8,  8,
 //   9,  9, 10, 10, 11,
 //   12, 12, 13, 14, 15,
+//   15, 16, 17, 18, 19,
+//   20, 22, 23, 24, 25
 //};
 
 //empty array for generating 
