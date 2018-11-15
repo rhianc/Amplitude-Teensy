@@ -53,7 +53,7 @@ AudioConnection          patchCord1(adc1, fft);
 // use a small number of bins, higher frequencies use more.
 
 //This is the original array, curve = 0.7964*e^(0.0583x)
-//int frequencyBinsHorizontal[60] = {
+//int frequencyBinsHorizontal[50] = {
 //   1,  1,  1,  1,  1,
 //   1,  1,  1,  1,  1,
 //   2,  2,  2,  2,  2,
@@ -64,13 +64,11 @@ AudioConnection          patchCord1(adc1, fft);
 //   7,  7,  7,  8,  8,
 //   9,  9, 10, 10, 11,
 //   12, 12, 13, 14, 15,
-//   15, 16, 17, 18, 19,
-//   20, 22, 23, 24, 25
 //};
 
 //empty array for generating 
 int genFrequencyBinsHorizontal[NUM_BINS];
-
+int genFrequencyHalfBinsHorizontal[HALF_NUM_BINS];
 //Array with some clipping to highest frequencies
 //int frequencyBinsHorizontal[60] = {
 //   1,  1,  1,  1,  1,
@@ -87,13 +85,13 @@ int genFrequencyBinsHorizontal[NUM_BINS];
 //   15, 16, 17, 18, 20
 //};
 
-int frequencyBinsHorizontal[25] = {
-   2,  2,  2,  2,  2,
-   2,  2,  2,  2,  2,
-   4,  4,  4,  4,  4,
-   4,  4,  4,  4,  6,
-   6,  6,  6,  6,  8,
-};
+//int frequencyHalfBinsHorizontal[25] = {
+//   3,  3,  3,  3,  3,
+//   3,  3,  3,  3,  3,
+//   6,  6,  6,  6,  6,
+//   6,  6,  6,  6,  9,
+//   9,  9,  9,  9,  12,
+//};
 
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -111,7 +109,7 @@ void setup() {
   computeVerticalLevels();
   //creates spectrum color array for use later
   color_spectrum_half_wrap_setup();
-
+//  color_spectrum_setup();
   FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
 
 // turn on the strip
@@ -125,6 +123,7 @@ void loop() {
   if (fft.available()) {
     //choose visuals
     color_spectrum_half_wrap();
+//    color_spectrum();
     // after all pixels set, show them all at the same instant
     FastLED.show();
 
@@ -135,6 +134,7 @@ void loop() {
 //----------------------------SETUP FUNCTIONS----------------------------
 //-----------------------------------------------------------------------
 // Run once from setup, the compute the vertical levels
+// We don't actually use this right now. why not?
 void computeVerticalLevels() {
   unsigned int y;
   float n, logLevel, linearLevel;
@@ -153,6 +153,10 @@ void computeVerticalLevels() {
 void writeFrequencyBinsHorizontal(){
   for (int i=0; i < NUM_BINS; i++){
     genFrequencyBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*i));
+    Serial.println(genFrequencyBinsHorizontal[i]);
+  }
+  for (int i=0; i < HALF_NUM_BINS; i++){
+    genFrequencyHalfBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*i));
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
 }
@@ -201,20 +205,23 @@ void color_spectrum(){
   freqBin = 0;
   for (x=0; x < NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
-      level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
+      level = fft.read(freqBin, freqBin + genFrequencyBinsHorizontal[x] - 1);
       // uncomment to see the spectrum in Arduino's Serial Monitor
       //Serial.println(level);
       
-      if (level>0.075) {
+      if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
             int j = BIN_WIDTH*x - i;
-            color_spectrum_update(j,level);
+            color_spectrum_update(j,255*level*5);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
             int j = BIN_WIDTH*x - i;
+//            int val = max(leds[j].r,max(leds[j].g,leds[j].b));
+//            Serial.println(val);
+//            color_spectrum_update(j,1.5*val*decay);
             leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
           }
           
@@ -223,7 +230,7 @@ void color_spectrum(){
         
       // increment the frequency bin count, so we display
       // low to higher frequency from left to right
-      freqBin = freqBin + frequencyBinsHorizontal[x];
+      freqBin = freqBin + genFrequencyBinsHorizontal[x];
     }
 }
 
@@ -231,7 +238,7 @@ void color_spectrum_update(int index, float level) {
   float number = index * 255;
   float number1 = number / NUM_LEDS;
   float number2 = floor(number1);
-  leds[index] = CHSV(number2,255,255*level*5);
+  leds[index] = CHSV(number2,255,level);
 }
 
 void color_spectrum_half_wrap_setup() {
@@ -253,18 +260,18 @@ void color_spectrum_half_wrap(){
   freqBin = 0;
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
-      level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
+      level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
       int right = HALF_NUM_BINS - x;
       int left = HALF_NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       //Serial.println(level);
       
-      if (level>0.065) {
+      if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
             int j = BIN_WIDTH*right - i - 1;
             int k = BIN_WIDTH*left + i;
-            color_spectrum_half_wrap_update(j,level);
-            color_spectrum_half_wrap_update(k,level);
+            color_spectrum_half_wrap_update(j,255*level*5);
+            color_spectrum_half_wrap_update(k,255*level*5);
           }
 
           
@@ -281,7 +288,7 @@ void color_spectrum_half_wrap(){
         
       // increment the frequency bin count, so we display
       // low to higher frequency from left to right
-      freqBin = freqBin + frequencyBinsHorizontal[x];
+      freqBin = freqBin + genFrequencyHalfBinsHorizontal[x];
     }
 }
 
@@ -291,11 +298,11 @@ void color_spectrum_half_wrap_update(int index, float level) {
   }else if(index >= HALF_LEDS){
     int f_index = index - HALF_LEDS;
     CHSV fled = fleds[f_index];
-    leds[index] = CHSV(fled.hue,255,255*level*5);
+    leds[index] = CHSV(fled.hue,255,level);
   }else{
     int f_index = abs(index - HALF_LEDS +1);
     CHSV fled = fleds[f_index];
-    leds[index] = CHSV(fled.hue,255,255*level*5);
+    leds[index] = CHSV(fled.hue,255,level);
   }
 }
 
