@@ -30,6 +30,7 @@ float thresholdVertical[max_height];
 float decay = 0.95;
 int HALF_LEDS = floor(NUM_LEDS/2);
 CRGB leds[NUM_LEDS];
+CHSV hsv_leds[NUM_LEDS];
 CHSV fleds[NUM_LEDS / 2];
 //PINS!
 const int AUDIO_INPUT_PIN = 7;        // Input ADC pin for audio data.
@@ -156,7 +157,7 @@ void writeFrequencyBinsHorizontal(){
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
-    genFrequencyHalfBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*i));
+    genFrequencyHalfBinsHorizontal[i] = ceil(1.5*0.7964*pow(M_E,0.0583*i));
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
 }
@@ -195,13 +196,16 @@ void color_spectrum_setup() {
     float number = i * 255;
     float number1 = number / NUM_LEDS;
     float number2 = floor(number1);
-    leds[i] = CHSV(number2,255,0);
+    leds[i] = CHSV(number2,255,255);
+    hsv_leds[i] = CHSV(number2,255,255);
   }
 }
 
 void color_spectrum(){
   unsigned int x, freqBin;
   float level;
+  int val;
+  int j;
   freqBin = 0;
   for (x=0; x < NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
@@ -211,18 +215,20 @@ void color_spectrum(){
       
       if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*x - i;
+            j = BIN_WIDTH*x - i;
             color_spectrum_update(j,255*level*5);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*x - i;
-//            int val = max(leds[j].r,max(leds[j].g,leds[j].b));
-//            Serial.println(val);
-//            color_spectrum_update(j,1.5*val*decay);
-            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
+            j = BIN_WIDTH*x - i;
+            val = hsv_leds[j].val;
+            if(val < 20){
+              color_spectrum_update(j,0);
+            }
+            color_spectrum_update(j,val*decay);
+//            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
           }
           
          
@@ -239,6 +245,7 @@ void color_spectrum_update(int index, float level) {
   float number1 = number / NUM_LEDS;
   float number2 = floor(number1);
   leds[index] = CHSV(number2,255,level);
+  hsv_leds[index] = CHSV(number2,255,level);
 }
 
 void color_spectrum_half_wrap_setup() {
@@ -250,26 +257,34 @@ void color_spectrum_half_wrap_setup() {
   }
   for (int i = 0; i< HALF_LEDS; i++){
     leds[HALF_LEDS - i - 1] = fleds[i];
+    hsv_leds[HALF_LEDS - i - 1] = fleds[i];
     leds[HALF_LEDS + i] = fleds[i];
+    hsv_leds[HALF_LEDS + i] = fleds[i];
   }
 }
 
 void color_spectrum_half_wrap(){
   unsigned int x, freqBin;
   float level;
+  int j_val;
+  int k_val;
+  int j;
+  int k;
+  int right;
+  int left;
   freqBin = 0;
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
-      int right = HALF_NUM_BINS - x;
-      int left = HALF_NUM_BINS + x;
+      right = HALF_NUM_BINS - x;
+      left = HALF_NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       //Serial.println(level);
       
-      if (level>0.1) {
+      if (level>0.08) {
           for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*right - i - 1;
-            int k = BIN_WIDTH*left + i;
+            j = BIN_WIDTH*right - i - 1;
+            k = BIN_WIDTH*left + i;
             color_spectrum_half_wrap_update(j,255*level*5);
             color_spectrum_half_wrap_update(k,255*level*5);
           }
@@ -277,10 +292,16 @@ void color_spectrum_half_wrap(){
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*right - i - 1;
-            int k = BIN_WIDTH*left + i;
-            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
-            leds[k] = CRGB(leds[k].r *decay,leds[k].g *decay,leds[k].b *decay);
+            j = BIN_WIDTH*right - i - 1;
+            k = BIN_WIDTH*left + i;
+            j_val = hsv_leds[j].val;
+            if(j_val < 20){
+              color_spectrum_half_wrap_update(j,0);
+              color_spectrum_half_wrap_update(k,0);
+            }else{
+              color_spectrum_half_wrap_update(j,j_val * decay);
+              color_spectrum_half_wrap_update(k,j_val * decay);
+            }
           }
           
          
@@ -299,10 +320,12 @@ void color_spectrum_half_wrap_update(int index, float level) {
     int f_index = index - HALF_LEDS;
     CHSV fled = fleds[f_index];
     leds[index] = CHSV(fled.hue,255,level);
+    hsv_leds[index] = CHSV(fled.hue,255,level);
   }else{
     int f_index = abs(index - HALF_LEDS +1);
     CHSV fled = fleds[f_index];
     leds[index] = CHSV(fled.hue,255,level);
+    hsv_leds[index] = CHSV(fled.hue,255,level);
   }
 }
 
