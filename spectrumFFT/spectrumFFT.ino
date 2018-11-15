@@ -26,7 +26,7 @@ const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 const float dynamicRange = 50.0; // total range to display, in decibels
 const float linearBlend = 0.4;   // useful range is 0 to 0.7
 #define NUM_LEDS 200
-#define BIN_WIDTH 4
+#define BIN_WIDTH 4 
 
 float decay = 0.95;
 int HALF_LEDS = floor(NUM_LEDS/2);
