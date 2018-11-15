@@ -27,7 +27,7 @@ const float dynamicRange = 40.0; // total range to display, in decibels
 const float linearBlend = 0.3;   // useful range is 0 to 0.7
 #define NUM_LEDS 150
 #define BIN_WIDTH 3
-float decay = 0.7;
+float decay = 0.95;
 int HALF_LEDS = floor(NUM_LEDS/2);
 CRGB leds[NUM_LEDS];
 CHSV fleds[NUM_LEDS / 2];
