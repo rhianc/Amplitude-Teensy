@@ -9,8 +9,8 @@
 #include "FastLED.h"
 #include <math.h>
 
-#define NUM_LEDS 200
-#define BIN_WIDTH 4 
+#define NUM_LEDS 150
+#define BIN_WIDTH 3 
 
 // MATRIX VARIABLES FROM BEFORE
 const unsigned int matrix_width = 60;
@@ -34,7 +34,8 @@ const int AUDIO_INPUT_PIN = 7;        // Input ADC pin for audio data.
 const int POWER_LED_PIN = 13; 
 //Adafruit Neopixel object
 const int NEO_PIXEL_PIN = 12;           // Output pin for neo pixels.
-const int NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
+const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
+const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -69,19 +70,27 @@ AudioConnection          patchCord1(adc1, fft);
 int genFrequencyBinsHorizontal[NUM_BINS];
 
 //Array with some clipping to highest frequencies
-int frequencyBinsHorizontal[60] = {
-   1,  1,  1,  1,  1,
-   1,  1,  1,  1,  1,
+//int frequencyBinsHorizontal[60] = {
+//   1,  1,  1,  1,  1,
+//   1,  1,  1,  1,  1,
+//   2,  2,  2,  2,  2,
+//   2,  2,  2,  2,  3,
+//   3,  3,  3,  3,  4,
+//   4,  4,  4,  4,  5,
+//   5,  5,  6,  6,  6,
+//   7,  7,  7,  8,  8,
+//   9,  9, 10, 10, 11,
+//   12, 12, 13, 14, 15,
+//   15, 15, 15, 15, 15,
+//   15, 16, 17, 18, 20
+//};
+
+int frequencyBinsHorizontal[25] = {
    2,  2,  2,  2,  2,
-   2,  2,  2,  2,  3,
-   3,  3,  3,  3,  4,
-   4,  4,  4,  4,  5,
-   5,  5,  6,  6,  6,
-   7,  7,  7,  8,  8,
-   9,  9, 10, 10, 11,
-   12, 12, 13, 14, 15,
-   15, 15, 15, 15, 15,
-   15, 16, 17, 18, 20
+   2,  2,  2,  2,  2,
+   4,  4,  4,  4,  4,
+   4,  4,  4,  4,  6,
+   6,  6,  6,  6,  8,
 };
 
 //----------------------------------------------------------------------
@@ -175,13 +184,45 @@ uint8_t getBlueValueFromColor(uint32_t c) {
 
 
 
-void color_spectrum() {
+void color_spectrum_setup() {
   for (int i = 0;i < NUM_LEDS; i++){
     float number = i * 255;
     float number1 = number / NUM_LEDS;
     float number2 = floor(number1);
     leds[i] = CHSV(number2,255,0);
   }
+}
+
+void color_spectrum(){
+  unsigned int x, freqBin;
+  float level;
+  freqBin = 0;
+  for (x=0; x < NUM_BINS; x++) {
+      // get the volume for each horizontal pixel position
+      level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
+      // uncomment to see the spectrum in Arduino's Serial Monitor
+      //Serial.println(level);
+      
+      if (level>0.075) {
+          for(int i=0;i<BIN_WIDTH;i++){
+            int j = BIN_WIDTH*x - i;
+            color_spectrum_update(j,level);
+          }
+
+          
+        } else {
+          for(int i=0;i<BIN_WIDTH;i++){
+            int j = BIN_WIDTH*x - i;
+            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
+          }
+          
+         
+        }
+        
+      // increment the frequency bin count, so we display
+      // low to higher frequency from left to right
+      freqBin = freqBin + frequencyBinsHorizontal[x];
+    }
 }
 
 void color_spectrum_update(int index, float level) {
@@ -208,11 +249,11 @@ void color_spectrum_half_wrap(){
   unsigned int x, freqBin;
   float level;
   freqBin = 0;
-  for (x=0; x < NUM_BINS; x++) {
+  for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
-      int right = NUM_BINS - x;
-      int left = NUM_BINS + x;
+      int right = HALF_NUM_BINS - x;
+      int left = HALF_NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       //Serial.println(level);
       
