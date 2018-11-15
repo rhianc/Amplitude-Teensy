@@ -155,7 +155,7 @@ void computeVerticalLevels() {
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
   for (int i=0; i < NUM_BINS; i++){
-    genFrequencyBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*i));
+    genFrequencyBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*(i+1)*(60/NUM_BINS)))*(60/NUM_BINS);
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
