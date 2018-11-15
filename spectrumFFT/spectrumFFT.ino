@@ -25,10 +25,12 @@ const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 const float dynamicRange = 40.0; // total range to display, in decibels
 const float linearBlend = 0.3;   // useful range is 0 to 0.7
-#define NUM_LEDS 200
-#define BIN_WIDTH 4
+#define NUM_LEDS 150
+#define BIN_WIDTH 3
 float decay = 0.7;
+int HALF_LEDS = floor(NUM_LEDS/2);
 CRGB leds[NUM_LEDS];
+CHSV fleds[NUM_LEDS / 2];
 
 /*
 // OctoWS2811 objects
@@ -45,7 +47,7 @@ const int POWER_LED_PIN = 13;
 
 //Adafruit Neopixel object
 const int NEO_PIXEL_PIN = 12;           // Output pin for neo pixels.
-const int NUM_BINS = floor(NUM_LEDS/BIN_WIDTH);         // Number of neo pixels.  You should be able to increase this without
+const int NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH));         // Number of neo pixels.  You should be able to increase this without
                                        // any other changes to the program.
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -64,13 +66,27 @@ float thresholdVertical[max_height];
 // to use for each horizontal pixel.  Because humans hear
 // in octaves and FFT bins are linear, the low frequencies
 // use a small number of bins, higher frequencies use more.
-int frequencyBinsHorizontal[NUM_BINS] = {
-   1,  1,  1,  1,  1,  1,  1,  1,  1,  1,
-   2,  2,  2,  2,  2,  2,  2,  2,  2,  3,
-   3,  3,  3,  3,  4,  4,  4,  4,  4,  5,
-   5,  5,  6,  6,  6,  7,  7,  7,  8,  8,
-   9,  9, 10, 10, 11, 12, 12, 13, 14, 15,
-//  15, 16, 17, 18, 19, 20, 22, 23, 24, 25
+//int frequencyBinsHorizontal[NUM_BINS] = {
+//   1,  1,  1,  1,  1,
+//   1,  1,  1,  1,  1,
+//   2,  2,  2,  2,  2,
+//   2,  2,  2,  2,  3,
+//   3,  3,  3,  3,  4,
+//   4,  4,  4,  4,  5,
+//   5,  5,  6,  6,  6,
+//   7,  7,  7,  8,  8,
+//   9,  9, 10, 10, 11,
+//   12, 12, 13, 14, 15,
+//   15, 16, 17, 18, 19,
+//   20, 22, 23, 24, 25
+//};
+
+int frequencyBinsHorizontal[25] = {
+   2,  2,  2,  2,  2,
+   2,  2,  2,  2,  2,
+   4,  4,  4,  4,  4,
+   4,  4,  4,  4,  6,
+   6,  6,  6,  6,  8,
 };
 
 
@@ -80,16 +96,16 @@ void setup() {
   // the audio library needs to be given memory to start working
   AudioMemory(12);
   Serial.begin(9600);
-  Serial.println("hello");
+  Serial.println("setup");
 //  writeFrequencyBinsHorizontal();
   // compute the vertical thresholds before starting
   computeVerticalLevels();
-  color_spectrum();
+  color_spectrum_half_wrap();
   FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
   // turn on the display
 //  pixels.begin();
 //  pixels.show();
-//  FastLED.show();
+  FastLED.show();
 }
 
 // A simple xy() function to turn display matrix coordinates
@@ -118,23 +134,25 @@ void loop() {
     for (x=0; x < NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
-
+      int right = NUM_BINS - x;
+      int left = NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       Serial.println(level);
-      if (level>0.1) {
+      if (level>0.075) {
           for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*x - i;
-            float number = j * 255;
-            float number1 = number / NUM_LEDS;
-            float number2 = floor(number1);
-            leds[j] = CHSV(number2,255,255*level*5);
+            int j = BIN_WIDTH*right - i - 1;
+            int k = BIN_WIDTH*left + i;
+            color_spectrum_half_wrap_update(j,level);
+            color_spectrum_half_wrap_update(k,level);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*x - i;
+            int j = BIN_WIDTH*right - i - 1;
+            int k = BIN_WIDTH*left + i;
             leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
+            leds[k] = CRGB(leds[k].r *decay,leds[k].g *decay,leds[k].b *decay);
           }
           
          
@@ -205,5 +223,39 @@ void color_spectrum() {
     float number1 = number / NUM_LEDS;
     float number2 = floor(number1);
     leds[i] = CHSV(number2,255,0);
+  }
+}
+
+void color_spectrum_update(int index, float level) {
+  float number = index * 255;
+  float number1 = number / NUM_LEDS;
+  float number2 = floor(number1);
+  leds[index] = CHSV(number2,255,255*level*5);
+}
+
+void color_spectrum_half_wrap() {
+  for (int i = 0;i < HALF_LEDS; i++){
+    float number = i * 255;
+    float number1 = number / HALF_LEDS;
+    float number2 = floor(number1);
+    fleds[i] = CHSV(number2,255,255);
+  }
+  for (int i = 0; i< HALF_LEDS; i++){
+    leds[HALF_LEDS - i - 1] = fleds[i];
+    leds[HALF_LEDS + i] = fleds[i];
+  }
+}
+
+void color_spectrum_half_wrap_update(int index, float level) {
+  if(index >= NUM_LEDS || index < 0){
+    ;
+  }else if(index >= HALF_LEDS){
+    int f_index = index - HALF_LEDS;
+    CHSV fled = fleds[f_index];
+    leds[index] = CHSV(fled.hue,255,255*level*5);
+  }else{
+    int f_index = abs(index - HALF_LEDS +1);
+    CHSV fled = fleds[f_index];
+    leds[index] = CHSV(fled.hue,255,255*level*5);
   }
 }
