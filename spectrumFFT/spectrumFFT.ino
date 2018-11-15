@@ -123,56 +123,8 @@ void setup() {
 void loop() {
 
   if (fft.available()) {
-<<<<<<< HEAD
-    // freqBin counts which FFT frequency data has been used,
-    // starting at low frequency
-    freqBin = 0;
-    for (x=0; x < NUM_BINS; x++) {
-      // get the volume for each horizontal pixel position
-      level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
-      //mirrors same bins around the middle of the strip
-      int right = NUM_BINS - x;
-      int left = NUM_BINS + x;
-      // uncomment to see the spectrum in Arduino's Serial Monitor
-      Serial.println(level);
-      //turns on the leds to brightness determined by levek
-      if (level>0.075) {
-          for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*right - i - 1;
-            int k = BIN_WIDTH*left + i;
-            color_spectrum_half_wrap_update(j,level);
-            color_spectrum_half_wrap_update(k,level);
-          }
-
-          //decay's leds whos level is below the threshold
-        } else {
-          for(int i=0;i<BIN_WIDTH;i++){
-            int j = BIN_WIDTH*right - i - 1;
-            int k = BIN_WIDTH*left + i;
-            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
-            leds[k] = CRGB(leds[k].r *decay,leds[k].g *decay,leds[k].b *decay);
-          }
-          
-         
-        }
-        /*
-      for (y=0; y < max_height; y++) {
-        // for each vertical pixel, check if above the threshold
-        // and turn the LED on or off
-        if (level >= thresholdVertical[y]) {
-          pixels.setPixelColor(x,level*pixels.Color(myColor);
-        } else {
-          pixels.setPixelColor(x,pixels.Color(0,0,0) );
-        }
-      }*/
-      // increment the frequency bin count, so we display
-      // low to higher frequency from left to right
-      freqBin = freqBin + frequencyBinsHorizontal[x];
-    }
-=======
     //choose visuals
     color_spectrum_half_wrap();
->>>>>>> bf110476ad250ba7b5a9b6f605a7426faac25507
     // after all pixels set, show them all at the same instant
     FastLED.show();
 
