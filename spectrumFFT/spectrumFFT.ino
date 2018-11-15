@@ -111,8 +111,8 @@ void setup() {
   //compute the vertical thresholds before starting. These are used for intensity graphing of frequencies
   computeVerticalLevels();
   //creates spectrum color array for use later
-  color_spectrum_half_wrap_setup();
-//  color_spectrum_setup();
+//  color_spectrum_half_wrap_setup();
+  color_spectrum_setup();
   FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
 
 // turn on the strip
@@ -125,8 +125,8 @@ void loop() {
 
   if (fft.available()) {
     //choose visuals
-    color_spectrum_half_wrap();
-//    color_spectrum();
+//    color_spectrum_half_wrap();
+    color_spectrum();
     // after all pixels set, show them all at the same instant
     FastLED.show();
 
@@ -155,11 +155,11 @@ void computeVerticalLevels() {
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
   for (int i=0; i < NUM_BINS; i++){
-    genFrequencyBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*i));
+    genFrequencyBinsHorizontal[i] = ceil((60/NUM_BINS)*0.7964*pow(M_E,0.0583*(i + 1)));
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
-    genFrequencyHalfBinsHorizontal[i] = ceil(1.5*0.7964*pow(M_E,0.0583*i));
+    genFrequencyHalfBinsHorizontal[i] = ceil((60/HALF_NUM_BINS)*0.7964*pow(M_E,0.0583*(i + 1)));
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
 }
@@ -217,14 +217,14 @@ void color_spectrum(){
       
       if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*x - i;
+            j = BIN_WIDTH*x + i;
             color_spectrum_update(j,255*level*5);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*x - i;
+            j = BIN_WIDTH*x + i;
             val = hsv_leds[j].val;
             if(val < 20){
               color_spectrum_update(j,0);
