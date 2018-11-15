@@ -25,8 +25,8 @@ const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 const float dynamicRange = 40.0; // total range to display, in decibels
 const float linearBlend = 0.3;   // useful range is 0 to 0.7
-#define NUM_LEDS 150
-#define BIN_WIDTH 3
+#define NUM_LEDS 200
+#define BIN_WIDTH 4
 float decay = 0.7;
 CRGB leds[NUM_LEDS];
 
@@ -123,22 +123,17 @@ void loop() {
       Serial.println(level);
       if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
-//            pixels.setPixelColor(BIN_WIDTH*x - i,pixels.Color(240*level,0,120*level));
             int j = BIN_WIDTH*x - i;
             float number = j * 255;
             float number1 = number / NUM_LEDS;
             float number2 = floor(number1);
-            leds[j] = CHSV(number2,255,255);
+            leds[j] = CHSV(number2,255,255*level*5);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-//            pixels.setPixelColor(BIN_WIDTH*x - i,r*0.8,0,b*0.8);
             int j = BIN_WIDTH*x - i;
-//            float number = j * 255;
-//            float number1 = number / NUM_LEDS;
-//            float number2 = floor(number1);
             leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
           }
           
