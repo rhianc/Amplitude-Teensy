@@ -111,8 +111,9 @@ void setup() {
   //compute the vertical thresholds before starting. These are used for intensity graphing of frequencies
   computeVerticalLevels();
   //creates spectrum color array for use later
-  color_spectrum_half_wrap_setup();
+//  color_spectrum_half_wrap_setup();
 //  color_spectrum_setup();
+  color_partial_spectrum_setup(100);
   FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
 
 // turn on the strip
@@ -125,8 +126,9 @@ void loop() {
 
   if (fft.available()) {
     //choose visuals
-    color_spectrum_half_wrap();
+//    color_spectrum_half_wrap();
 //    color_spectrum();
+    color_partial_spectrum();
     // after all pixels set, show them all at the same instant
     FastLED.show();
 
@@ -155,11 +157,11 @@ void computeVerticalLevels() {
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
   for (int i=0; i < NUM_BINS; i++){
-    genFrequencyBinsHorizontal[i] = ceil(0.7964*pow(M_E,0.0583*i));
+    genFrequencyBinsHorizontal[i] = ceil((60/NUM_BINS)*0.7964*pow(M_E,0.0583*(i + 1)));
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
-    genFrequencyHalfBinsHorizontal[i] = ceil(1.5*0.7964*pow(M_E,0.0583*i));
+    genFrequencyHalfBinsHorizontal[i] = ceil((60/HALF_NUM_BINS)*0.7964*pow(M_E,0.0583*(i + 1)));
     Serial.println(genFrequencyBinsHorizontal[i]);
   }
 }
@@ -217,14 +219,14 @@ void color_spectrum(){
       
       if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*x - i;
+            j = BIN_WIDTH*x + i;
             color_spectrum_update(j,255*level*5);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*x - i;
+            j = BIN_WIDTH*x + i;
             val = hsv_leds[j].val;
             if(val < 20){
               color_spectrum_update(j,0);
@@ -250,6 +252,72 @@ void color_spectrum_update(int index, float level) {
   hsv_leds[index] = CHSV(number2,255,level);
 }
 
+void color_partial_spectrum_setup(int color_start) {
+  for (int i = 0;i < NUM_LEDS/10;i++){
+      for (int j = 0; j<5; j++){
+        leds[HALF_LEDS - 5*i - j - 1] = CHSV(color_start+2*i,255,255);
+        hsv_leds[HALF_LEDS - 5*i - j - 1] = CHSV(color_start+2*i,255,255);
+        leds[HALF_LEDS + 5*i + j] = CHSV(color_start+2*i,255,255);
+        hsv_leds[HALF_LEDS + 5*i + j] = CHSV(color_start+2*i,255,255);
+      }
+  }
+}
+
+void color_partial_spectrum(){
+  unsigned int x, freqBin;
+  float level;
+  int j_val;
+  int j;
+  int k;
+  int right;
+  int left;
+  freqBin = 0;
+  for (x=0; x < HALF_NUM_BINS; x++) {
+      // get the volume for each horizontal pixel position
+      level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
+      right = HALF_NUM_BINS - x;
+      left = HALF_NUM_BINS + x;
+      // uncomment to see the spectrum in Arduino's Serial Monitor
+      //Serial.println(level);
+      
+      if (level>0.08) {
+          for(int i=0;i<BIN_WIDTH;i++){
+            j = BIN_WIDTH*right - i - 1;
+            k = BIN_WIDTH*left + i;
+            color_partial_spectrum_update(j,255*level*5);
+            color_partial_spectrum_update(k,255*level*5);
+          }
+
+          
+        } else {
+          for(int i=0;i<BIN_WIDTH;i++){
+            j = BIN_WIDTH*right - i - 1;
+            k = BIN_WIDTH*left + i;
+            j_val = hsv_leds[j].val;
+            if(j_val < 20){
+              color_partial_spectrum_update(j,0);
+              color_partial_spectrum_update(k,0);
+            }else{
+              color_partial_spectrum_update(j,j_val * decay);
+              color_partial_spectrum_update(k,j_val * decay);
+            }
+          }
+          
+         
+        }
+        
+      // increment the frequency bin count, so we display
+      // low to higher frequency from left to right
+      freqBin = freqBin + genFrequencyHalfBinsHorizontal[x];
+    }
+}
+
+void color_partial_spectrum_update(int index, float level) {
+  int hue = hsv_leds[index].hue;
+  leds[index] = CHSV(hue,255,level);
+  hsv_leds[index] = CHSV(hue,255,level);
+}
+
 void color_spectrum_half_wrap_setup() {
   for (int i = 0;i < HALF_LEDS; i++){
     float number = i * 255;
@@ -269,7 +337,6 @@ void color_spectrum_half_wrap(){
   unsigned int x, freqBin;
   float level;
   int j_val;
-  int k_val;
   int j;
   int k;
   int right;
