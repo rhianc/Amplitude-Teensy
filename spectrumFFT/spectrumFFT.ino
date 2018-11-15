@@ -17,12 +17,14 @@ const unsigned int matrix_width = 60;
 const unsigned int matrix_height = 32;
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
+
 const float dynamicRange = 60.0; // total range to display, in decibels
 const float linearBlend = 0.4;   // useful range is 0 to 0.7
 // This array holds the volume level (0 to 1.0) for each
 // vertical pixel to turn on.  Computed in setup() using
 // the 3 parameters above.
 float thresholdVertical[max_height];
+
 
 
 float decay = 0.95;
