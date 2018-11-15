@@ -23,11 +23,12 @@ const unsigned int max_height = 255;
 
 // These parameters adjust the vertical thresholds
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
-const float dynamicRange = 40.0; // total range to display, in decibels
-const float linearBlend = 0.3;   // useful range is 0 to 0.7
-#define NUM_LEDS 150
-#define BIN_WIDTH 3
-float decay = 0.7;
+const float dynamicRange = 50.0; // total range to display, in decibels
+const float linearBlend = 0.4;   // useful range is 0 to 0.7
+#define NUM_LEDS 200
+#define BIN_WIDTH 4
+
+float decay = 0.95;
 int HALF_LEDS = floor(NUM_LEDS/2);
 CRGB leds[NUM_LEDS];
 CHSV fleds[NUM_LEDS / 2];
@@ -47,8 +48,8 @@ const int POWER_LED_PIN = 13;
 
 //Adafruit Neopixel object
 const int NEO_PIXEL_PIN = 12;           // Output pin for neo pixels.
-const int NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH));         // Number of neo pixels.  You should be able to increase this without
-                                       // any other changes to the program.
+const int NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
+
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 // Audio library objects
@@ -66,7 +67,7 @@ float thresholdVertical[max_height];
 // to use for each horizontal pixel.  Because humans hear
 // in octaves and FFT bins are linear, the low frequencies
 // use a small number of bins, higher frequencies use more.
-//int frequencyBinsHorizontal[NUM_BINS] = {
+//int frequencyBinsHorizontal[60] = {
 //   1,  1,  1,  1,  1,
 //   1,  1,  1,  1,  1,
 //   2,  2,  2,  2,  2,
@@ -81,13 +82,28 @@ float thresholdVertical[max_height];
 //   20, 22, 23, 24, 25
 //};
 
-int frequencyBinsHorizontal[25] = {
+int frequencyBinsHorizontal[60] = {
+   1,  1,  1,  1,  1,
+   1,  1,  1,  1,  1,
    2,  2,  2,  2,  2,
-   2,  2,  2,  2,  2,
-   4,  4,  4,  4,  4,
-   4,  4,  4,  4,  6,
-   6,  6,  6,  6,  8,
+   2,  2,  2,  2,  3,
+   3,  3,  3,  3,  4,
+   4,  4,  4,  4,  5,
+   5,  5,  6,  6,  6,
+   7,  7,  7,  8,  8,
+   9,  9, 10, 10, 11,
+   12, 12, 13, 14, 15,
+   15, 15, 15, 15, 15,
+   15, 16, 17, 18, 20
 };
+
+//int frequencyBinsHorizontal[25] = {
+//   2,  2,  2,  2,  2,
+//   2,  2,  2,  2,  2,
+//   4,  4,  4,  4,  4,
+//   4,  4,  4,  4,  6,
+//   6,  6,  6,  6,  8,
+//};
 
 
 
@@ -138,7 +154,7 @@ void loop() {
       int left = NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       Serial.println(level);
-      if (level>0.075) {
+      if (level>0.065) {
           for(int i=0;i<BIN_WIDTH;i++){
             int j = BIN_WIDTH*right - i - 1;
             int k = BIN_WIDTH*left + i;
