@@ -134,10 +134,12 @@ void loop() {
     for (x=0; x < NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
+      //mirrors same bins around the middle of the strip
       int right = NUM_BINS - x;
       int left = NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       Serial.println(level);
+      //turns on the leds to brightness determined by levek
       if (level>0.075) {
           for(int i=0;i<BIN_WIDTH;i++){
             int j = BIN_WIDTH*right - i - 1;
@@ -146,7 +148,7 @@ void loop() {
             color_spectrum_half_wrap_update(k,level);
           }
 
-          
+          //decay's leds whos level is below the threshold
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
             int j = BIN_WIDTH*right - i - 1;
