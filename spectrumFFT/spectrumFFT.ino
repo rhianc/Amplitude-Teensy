@@ -9,8 +9,8 @@
 #include "FastLED.h"
 #include <math.h>
 
-#define NUM_LEDS 200
-#define BIN_WIDTH 4
+#define NUM_LEDS 150
+#define BIN_WIDTH 3
 
 // MATRIX VARIABLES FROM BEFORE
 const unsigned int matrix_width = 60;
@@ -126,7 +126,7 @@ void setup() {
 
 
 void loop() {
-
+  
   if (fft.available()) {
     //choose visuals
     color_spectrum_half_wrap();
@@ -159,12 +159,10 @@ void computeVerticalLevels() {
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
   for (int i=0; i < NUM_BINS; i++){
-    genFrequencyBinsHorizontal[i] = ceil((60/NUM_BINS)*0.7964*pow(M_E,0.0583*(i + 1)));
-    Serial.println(genFrequencyBinsHorizontal[i]);
+    genFrequencyBinsHorizontal[i] = ceil(60./NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)));
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
-    genFrequencyHalfBinsHorizontal[i] = ceil((60/HALF_NUM_BINS)*0.7964*pow(M_E,0.0583*((i + 1)*(60/HALF_NUM_BINS))));
-    Serial.println(genFrequencyBinsHorizontal[i]);
+    genFrequencyHalfBinsHorizontal[i] = ceil(60./HALF_NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)));
   }
 }
 //-----------------------------------------------------------------------
@@ -281,7 +279,7 @@ void color_spectrum_half_wrap(){
   freqBin = 0;
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
-      level = fft.read(freqBin, freqBin + frequencyBinsHorizontal[x] - 1);
+      level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
       right = HALF_NUM_BINS - x;
       left = HALF_NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
@@ -315,7 +313,7 @@ void color_spectrum_half_wrap(){
         
       // increment the frequency bin count, so we display
       // low to higher frequency from left to right
-      freqBin = freqBin + frequencyBinsHorizontal[x];
+      freqBin = freqBin + genFrequencyHalfBinsHorizontal[x];
     }
 }
 
