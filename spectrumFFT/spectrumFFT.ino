@@ -3,9 +3,8 @@
 
 #include <Audio.h>
 #include <Wire.h>
-#include <SD.h>
 #include <SPI.h>
-#include <Adafruit_NeoPixel.h>
+//#include <Adafruit_NeoPixel.h>
 #include "FastLED.h"
 #include <math.h>
 
@@ -32,6 +31,7 @@ int HALF_LEDS = floor(NUM_LEDS/2);
 CRGB leds[NUM_LEDS];
 CHSV hsv_leds[NUM_LEDS];
 CHSV fleds[NUM_LEDS / 2];
+
 //PINS!
 const int AUDIO_INPUT_PIN = 7;        // Input ADC pin for audio data.
 const int POWER_LED_PIN = 13; 
@@ -39,9 +39,8 @@ const int POWER_LED_PIN = 13;
 const int NEO_PIXEL_PIN = 12;           // Output pin for neo pixels.
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
-int STATIC_BRIGHTNESS = 1;
 
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
+//Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
 
 // Audio library objects
@@ -90,16 +89,6 @@ int frequencyBinsHorizontal[60] = {
    16, 17, 18, 19, 21
 };
 
-//int frequencyHalfBinsHorizontal[25] = {
-//   3,  3,  3,  3,  3,
-//   3,  3,  3,  3,  3,
-//   6,  6,  6,  6,  6,
-//   6,  6,  6,  6,  9,
-//   9,  9,  9,  9,  12,
-//};
-
-//int colorRange = 60;
-//int startColor = 100;
 int timer = 0;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -113,34 +102,37 @@ void setup() {
   Serial.begin(9600);
   Serial.println("setup");
   writeFrequencyBinsHorizontal();
-  //compute the vertical thresholds before starting. These are used for intensity graphing of frequencies
-  computeVerticalLevels();
-  //creates spectrum color array for use later
+  
+  //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
+  //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
+  
   color_spectrum_half_wrap_setup(80,0);
-//  color_spectrum_setup(255,0);
-  FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
+  //color_spectrum_setup(255,0);
 
-// turn on the strip
+//initialize strip object
+  FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
   FastLED.show();
+
+  //compute the vertical thresholds before starting. These are used for intensity graphing of frequencies
+  //computeVerticalLevels();
 }
 
 
 
 void loop() {
-  
+   //check if Audio processing for that sample frame is compelte
    if (fft.available()) {
-////    choose visuals  
+      // uncomment spectrum visual type
       color_spectrum_half_wrap();
-//    color_spectrum(255,0);
+      //color_spectrum(255,0);
       FastLED.show();
-//
   }
-  timer = millis();
-  if(timer%10 == 0){
-    moving_color_spectrum_half_wrap(1);
-  }
-    // after all pixels set, show them all at the same instant
 
+  //choose any time based modifiers
+  timer = millis();
+  if(timer%75 == 0){
+    moving_color_spectrum_half_wrap(1);    //modifies color mapping
+  }
   
 }
 
@@ -166,10 +158,10 @@ void computeVerticalLevels() {
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
   for (int i=0; i < NUM_BINS; i++){
-    genFrequencyBinsHorizontal[i] = ceil(60./NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)));
+    genFrequencyBinsHorizontal[i] = ceil(60./NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./NUM_BINS)));
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
-    genFrequencyHalfBinsHorizontal[i] = ceil(60./HALF_NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)));
+    genFrequencyHalfBinsHorizontal[i] = ceil(60./HALF_NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./HALF_NUM_BINS)));
   }
 }
 
@@ -177,46 +169,9 @@ void writeFrequencyBinsHorizontal(){
 //---------------------------RAINBOW VISUALS----------------------------
 //----------------------------------------------------------------------
 
-//NON REACTIVE----
+//NON REACTIVE----SPECTRUM BUILDERS
 
-void moving_color_spectrum_half_wrap(int deltaHue){
-  unsigned int x;
-  int right;
-  int left;
-  for (x=0; x < ceil(NUM_LEDS*0.5); x++) {
-      // get the volume for each horizontal pixel position
-      right = ceil(NUM_LEDS*0.5) - x -1;
-      left = ceil(NUM_LEDS*0.5) + x ;
-      moving_color_spectrum_half_wrap_update(right,255*STATIC_BRIGHTNESS, deltaHue);
-      moving_color_spectrum_half_wrap_update(left,255*STATIC_BRIGHTNESS, deltaHue);
-
-
-    }
-}
-
-void moving_color_spectrum_half_wrap_update(int index, float level, int deltaHue) {
-  if(index >= NUM_LEDS || index < 0){
-    ;
-  }else if(index >= HALF_LEDS){     //side further away from 0, start at 0 in fleds
-    int f_index = index - HALF_LEDS;
-    CHSV fled = fleds[f_index];
-    //leds[index] = CHSV(fled.hue+deltaHue,255,fled.val);
-    fleds[f_index] = CHSV(fled.hue+deltaHue,255,fled.val);
-  }else{
-    int f_index = abs(index - HALF_LEDS +1);  //negative index starts from  end and works back
-    CHSV fled = fleds[f_index];
-    //leds[index] = CHSV(fled.hue-deltaHue,255,fled.val);
-    fleds[f_index] = CHSV(fled.hue+deltaHue,255,fled.val);
-  }
-}
-
-
-
-
-
-
-//REACTIVE
-
+//creates full spectrum from red -> magenta that maps from 0->NUM_LEDS
 void color_spectrum_setup(int colorRange, int startColor) {
   for (int i = 0;i < NUM_LEDS; i++){
     float number = i * colorRange;
@@ -227,6 +182,29 @@ void color_spectrum_setup(int colorRange, int startColor) {
   }
 }
 
+//creates full spectrum from center out, input variables determine amount of full spectrum to use (i.e can limit to smaller color ranges)
+void color_spectrum_half_wrap_setup(int colorRange, int startColor) {
+  for (int i = 0;i < HALF_LEDS; i++){
+    float number = i * colorRange;
+    float number1 = number / HALF_LEDS;
+    float number2 = floor(number1);
+    fleds[i] = CHSV((number2 + startColor),255,0);
+  }
+  for (int i = 0; i< HALF_LEDS; i++){
+    leds[HALF_LEDS - i - 1] = fleds[i];
+    hsv_leds[HALF_LEDS - i - 1] = fleds[i];
+    leds[HALF_LEDS + i] = fleds[i];
+    hsv_leds[HALF_LEDS + i] = fleds[i];
+  }
+}
+
+
+
+
+
+//REACTIVE----LEDS MODIFIERS
+
+//Frequency reactive, uses color from 
 void color_spectrum(int colorRange, int startColor){
   unsigned int x, freqBin;
   float level;
@@ -254,7 +232,6 @@ void color_spectrum(int colorRange, int startColor){
               color_spectrum_update(j,0,colorRange,startColor);
             }
             color_spectrum_update(j,val*decay,colorRange,startColor);
-//            leds[j] = CRGB(leds[j].r *decay,leds[j].g *decay,leds[j].b *decay);
           }
           
          
@@ -274,26 +251,13 @@ void color_spectrum_update(int index, float level,int colorRange, int startColor
   hsv_leds[index] = CHSV((number2 + startColor),255,level);
 }
 
-void color_spectrum_half_wrap_setup(int colorRange, int startColor) {
-  for (int i = 0;i < HALF_LEDS; i++){
-    float number = i * colorRange;
-    float number1 = number / HALF_LEDS;
-    float number2 = floor(number1);
-    fleds[i] = CHSV((number2 + startColor),255,0);
-  }
-  for (int i = 0; i< HALF_LEDS; i++){
-    leds[HALF_LEDS - i - 1] = fleds[i];
-    hsv_leds[HALF_LEDS - i - 1] = fleds[i];
-    leds[HALF_LEDS + i] = fleds[i];
-    hsv_leds[HALF_LEDS + i] = fleds[i];
-  }
-}
+
 
 void color_spectrum_half_wrap(){
   unsigned int x, freqBin;
   float level;
   int j_val;
-  int k_val;
+  //int k_val;
   int j;
   int k;
   int right;
@@ -353,6 +317,21 @@ void color_spectrum_half_wrap_update(int index, float level) {
     leds[index] = CHSV(fled.hue,255,level);
     hsv_leds[index] = CHSV(fled.hue,255,level);
   }
+}
+
+void moving_color_spectrum_half_wrap(int deltaHue){
+  unsigned int x;
+  int right;
+  int f_index;
+  CHSV fled;
+  for (x=0; x < ceil(NUM_LEDS*0.5); x++) {
+      // get the volume for each horizontal pixel position
+      right = ceil(NUM_LEDS*0.5) - x -1;
+      //moving_color_spectrum_half_wrap_update(right,255, deltaHue);
+      f_index = abs(right - HALF_LEDS +1);  //negative index starts from  end and works back
+      fled = fleds[f_index];
+      fleds[f_index] = CHSV(fled.hue+deltaHue,255,fled.val);
+    }
 }
 
 //----------------------------------------------------------------------
