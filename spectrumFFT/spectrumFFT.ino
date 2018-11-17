@@ -9,8 +9,8 @@
 #include "FastLED.h"
 #include <math.h>
 
-#define NUM_LEDS 150
-#define BIN_WIDTH 3
+#define NUM_LEDS 200
+#define BIN_WIDTH 4
 
 // MATRIX VARIABLES FROM BEFORE
 const unsigned int matrix_width = 60;
@@ -27,7 +27,7 @@ float thresholdVertical[max_height];
 
 
 
-float decay = 0.95;
+float decay = 0.96;
 int HALF_LEDS = floor(NUM_LEDS/2);
 CRGB leds[NUM_LEDS];
 CHSV hsv_leds[NUM_LEDS];
@@ -39,6 +39,7 @@ const int POWER_LED_PIN = 13;
 const int NEO_PIXEL_PIN = 12;           // Output pin for neo pixels.
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
+int STATIC_BRIGHTNESS = 1;
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUM_LEDS, NEO_PIXEL_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -99,7 +100,7 @@ int frequencyBinsHorizontal[60] = {
 
 //int colorRange = 60;
 //int startColor = 100;
-
+int timer = 0;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
@@ -115,7 +116,7 @@ void setup() {
   //compute the vertical thresholds before starting. These are used for intensity graphing of frequencies
   computeVerticalLevels();
   //creates spectrum color array for use later
-  color_spectrum_half_wrap_setup(255,0);
+  color_spectrum_half_wrap_setup(80,0);
 //  color_spectrum_setup(255,0);
   FastLED.addLeds<NEOPIXEL, NEO_PIXEL_PIN>(leds, NUM_LEDS);
 
@@ -127,14 +128,20 @@ void setup() {
 
 void loop() {
   
-  if (fft.available()) {
-    //choose visuals
-    color_spectrum_half_wrap();
+   if (fft.available()) {
+////    choose visuals  
+      color_spectrum_half_wrap();
 //    color_spectrum(255,0);
-    // after all pixels set, show them all at the same instant
-    FastLED.show();
-
+      FastLED.show();
+//
   }
+  timer = millis();
+  if(timer%10 == 0){
+    moving_color_spectrum_half_wrap(1);
+  }
+    // after all pixels set, show them all at the same instant
+
+  
 }
 
 //-----------------------------------------------------------------------
@@ -165,35 +172,50 @@ void writeFrequencyBinsHorizontal(){
     genFrequencyHalfBinsHorizontal[i] = ceil(60./HALF_NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)));
   }
 }
-//-----------------------------------------------------------------------
-//----------------------------COLOR MANAGEMENT---------------------------
-//-----------------------------------------------------------------------
-
-
-
-//Color conversions for Adafruit from 32bit to three rgb values
-void unPackRGB(uint32_t color, uint32_t &r, uint32_t &g,  uint32_t &b){
-  r = (color >>16)&0xff;
-  g = (color >> 8)&0xff;
-  b = (color)&0xff;
-}
-uint8_t getRedValueFromColor(uint32_t c) {
-    return (c >> 16)&0xff;
-}
-
-uint8_t getGreenValueFromColor(uint32_t c) {
-    return (c >> 8)&0xff;
-}
-
-uint8_t getBlueValueFromColor(uint32_t c) {
-    return c&0xff;
-}
 
 //----------------------------------------------------------------------
 //---------------------------RAINBOW VISUALS----------------------------
 //----------------------------------------------------------------------
 
+//NON REACTIVE----
 
+void moving_color_spectrum_half_wrap(int deltaHue){
+  unsigned int x;
+  int right;
+  int left;
+  for (x=0; x < ceil(NUM_LEDS*0.5); x++) {
+      // get the volume for each horizontal pixel position
+      right = ceil(NUM_LEDS*0.5) - x -1;
+      left = ceil(NUM_LEDS*0.5) + x ;
+      moving_color_spectrum_half_wrap_update(right,255*STATIC_BRIGHTNESS, deltaHue);
+      moving_color_spectrum_half_wrap_update(left,255*STATIC_BRIGHTNESS, deltaHue);
+
+
+    }
+}
+
+void moving_color_spectrum_half_wrap_update(int index, float level, int deltaHue) {
+  if(index >= NUM_LEDS || index < 0){
+    ;
+  }else if(index >= HALF_LEDS){     //side further away from 0, start at 0 in fleds
+    int f_index = index - HALF_LEDS;
+    CHSV fled = fleds[f_index];
+    //leds[index] = CHSV(fled.hue+deltaHue,255,fled.val);
+    fleds[f_index] = CHSV(fled.hue+deltaHue,255,fled.val);
+  }else{
+    int f_index = abs(index - HALF_LEDS +1);  //negative index starts from  end and works back
+    CHSV fled = fleds[f_index];
+    //leds[index] = CHSV(fled.hue-deltaHue,255,fled.val);
+    fleds[f_index] = CHSV(fled.hue+deltaHue,255,fled.val);
+  }
+}
+
+
+
+
+
+
+//REACTIVE
 
 void color_spectrum_setup(int colorRange, int startColor) {
   for (int i = 0;i < NUM_LEDS; i++){
@@ -257,7 +279,7 @@ void color_spectrum_half_wrap_setup(int colorRange, int startColor) {
     float number = i * colorRange;
     float number1 = number / HALF_LEDS;
     float number2 = floor(number1);
-    fleds[i] = CHSV((number2 + startColor),255,255);
+    fleds[i] = CHSV((number2 + startColor),255,0);
   }
   for (int i = 0; i< HALF_LEDS; i++){
     leds[HALF_LEDS - i - 1] = fleds[i];
