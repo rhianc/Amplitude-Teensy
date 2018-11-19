@@ -6,3 +6,5 @@ Base things to do : Create some wiring diagrams, explain hardware and hardware t
 ```
 _swoosh_
 ```
+
+Cool explanations of why we have to use FreqBinGen and why we SHOULD add some sort of EQ to the processing.
