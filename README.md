@@ -8,3 +8,4 @@ _swoosh_
 ```
 
 Cool explanations of why we have to use FreqBinGen and why we SHOULD add some sort of EQ to the processing.
+https://www.audiocheck.net/soundtests_nonlinear.php
