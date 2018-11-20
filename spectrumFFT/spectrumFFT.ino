@@ -9,7 +9,7 @@
 #include <math.h>
 
 #define NUM_LEDS 200
-#define BIN_WIDTH 4
+#define BIN_WIDTH 1
 
 // MATRIX VARIABLES FROM BEFORE
 const unsigned int matrix_width = 60;
@@ -72,7 +72,10 @@ AudioConnection          patchCord1(adc1, fft);
 
 //empty array for generating 
 int genFrequencyBinsHorizontal[NUM_BINS];
+float genFrequencyLabelsHorizontal[NUM_BINS];
+
 int genFrequencyHalfBinsHorizontal[HALF_NUM_BINS];
+float genFrequencyHalfLabelsHorizontal[HALF_NUM_BINS];
 //Array with some clipping to highest frequencies
 int frequencyBinsHorizontal[60] = {
    1,  1,  1,  1,  1,
@@ -106,7 +109,7 @@ void setup() {
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
   //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
   
-  color_spectrum_half_wrap_setup(80,0);
+  color_spectrum_half_wrap_setup(255,0);
   //color_spectrum_setup(255,0);
 
 //initialize strip object
@@ -130,9 +133,9 @@ void loop() {
 
   //choose any time based modifiers
   timer = millis();
-  if(timer%75 == 0){
-    moving_color_spectrum_half_wrap(1);    //modifies color mapping
-  }
+//  if(timer%10000== 0){
+//    moving_color_spectrum_half_wrap(1);    //modifies color mapping
+//  }
   
 }
 
@@ -157,11 +160,24 @@ void computeVerticalLevels() {
 
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
+  int sum = 0;
+  int binFreq = 44;
   for (int i=0; i < NUM_BINS; i++){
     genFrequencyBinsHorizontal[i] = ceil(60./NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./NUM_BINS)));
+    
   }
   for (int i=0; i < HALF_NUM_BINS; i++){
     genFrequencyHalfBinsHorizontal[i] = ceil(60./HALF_NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./HALF_NUM_BINS)));
+  }
+  
+  for (int i=0; i<NUM_BINS;i++){
+    genFrequencyLabelsHorizontal[i] = genFrequencyBinsHorizontal[i]*binFreq + sum;
+    sum = genFrequencyLabelsHorizontal[i];
+  }
+  sum = 0;
+  for (int i=0; i<HALF_NUM_BINS;i++){
+    genFrequencyHalfLabelsHorizontal[i] = genFrequencyBinsHorizontal[i]*binFreq + sum;
+    sum = genFrequencyHalfLabelsHorizontal[i];
   }
 }
 
@@ -208,19 +224,22 @@ void color_spectrum_half_wrap_setup(int colorRange, int startColor) {
 void color_spectrum(int colorRange, int startColor){
   unsigned int x, freqBin;
   float level;
+  float levelEq;
   int val;
   int j;
   freqBin = 0;
   for (x=0; x < NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + genFrequencyBinsHorizontal[x] - 1);
+      //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
+      levelEq = level*((genFrequencyLabelsHorizontal[x]*0.00875+80.)/80.);
       // uncomment to see the spectrum in Arduino's Serial Monitor
       //Serial.println(level);
       
-      if (level>0.1) {
+      if (levelEq>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = BIN_WIDTH*x + i;
-            color_spectrum_update(j,255*level*5,colorRange,startColor);
+            color_spectrum_update(j,255*levelEq*5,colorRange,startColor);
           }
 
           
@@ -256,6 +275,7 @@ void color_spectrum_update(int index, float level,int colorRange, int startColor
 void color_spectrum_half_wrap(){
   unsigned int x, freqBin;
   float level;
+  float levelEq;
   int j_val;
   //int k_val;
   int j;
@@ -266,17 +286,21 @@ void color_spectrum_half_wrap(){
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
+       //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
+      //gradient value (0.00875) was calculated but using 0.01 to account for bassy speaker and room IR.
+      levelEq = level*((genFrequencyHalfLabelsHorizontal[x]*0.01+80.)/80.);
+
       right = HALF_NUM_BINS - x;
       left = HALF_NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
-      //Serial.println(level);
+      Serial.println(levelEq);
       
-      if (level>0.08) {
+      if (levelEq>0.05) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = BIN_WIDTH*right - i - 1;
             k = BIN_WIDTH*left + i;
-            color_spectrum_half_wrap_update(j,255*level*5);
-            color_spectrum_half_wrap_update(k,255*level*5);
+            color_spectrum_half_wrap_update(j,255*levelEq*5);
+            color_spectrum_half_wrap_update(k,255*levelEq*5);
           }
 
           
