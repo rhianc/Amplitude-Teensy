@@ -17,5 +17,7 @@ for x in range(0,NUM_BINS):
     genFrequencyLabelsHorizontal.append(genFrequencyBinsHorizontal[x]*binFreq + sumB);
     sumB = genFrequencyLabelsHorizontal[x];
 print(genFrequencyLabelsHorizontal)
-print((0.0075*45+80)/80)
-print((0.0075*4000+80)/80)
+for f in genFrequencyLabelsHorizontal:
+
+	print((0.075*f+55)/80)
+	print(f)

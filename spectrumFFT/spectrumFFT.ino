@@ -126,7 +126,7 @@ void loop() {
    //check if Audio processing for that sample frame is compelte
    if (fft.available()) {
       // uncomment spectrum visual type
-      color_spectrum_half_wrap();
+      color_spectrum_half_wrap(true);
       //color_spectrum(255,0);
       FastLED.show();
   }
@@ -272,10 +272,9 @@ void color_spectrum_update(int index, float level,int colorRange, int startColor
 
 
 
-void color_spectrum_half_wrap(){
+void color_spectrum_half_wrap(bool useEq){
   unsigned int x, freqBin;
   float level;
-  float levelEq;
   int j_val;
   //int k_val;
   int j;
@@ -287,20 +286,26 @@ void color_spectrum_half_wrap(){
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
        //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
-      //gradient value (0.00875) was calculated but using 0.01 to account for bassy speaker and room IR.
-      levelEq = level*((genFrequencyHalfLabelsHorizontal[x]*0.01+80.)/80.);
-
+      //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
+      if(useEq==true){
+        if(genFrequencyHalfLabelsHorizontal[x]<4000){
+          level = level*((genFrequencyHalfLabelsHorizontal[x]*0.08+55.)/80.);
+        }
+        else{
+          level = level*((4000*0.08+55)/80.);
+        }
+      }
       right = HALF_NUM_BINS - x;
       left = HALF_NUM_BINS + x;
       // uncomment to see the spectrum in Arduino's Serial Monitor
-      Serial.println(levelEq);
+      Serial.println(level);
       
-      if (levelEq>0.05) {
+      if (level>0.04) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = BIN_WIDTH*right - i - 1;
             k = BIN_WIDTH*left + i;
-            color_spectrum_half_wrap_update(j,255*levelEq*5);
-            color_spectrum_half_wrap_update(k,255*levelEq*5);
+            color_spectrum_half_wrap_update(j,255*level*5);
+            color_spectrum_half_wrap_update(k,255*level*5);
           }
 
           
