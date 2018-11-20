@@ -232,11 +232,15 @@ void color_spectrum(int colorRange, int startColor){
       // get the volume for each horizontal pixel position
       level = fft.read(freqBin, freqBin + genFrequencyBinsHorizontal[x] - 1);
       //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
-      levelEq = level*((genFrequencyLabelsHorizontal[x]*0.00875+80.)/80.);
-      // uncomment to see the spectrum in Arduino's Serial Monitor
-      //Serial.println(level);
-      
-      if (levelEq>0.1) {
+      if(true){
+        if(genFrequencyLabelsHorizontal[x]<4000){
+          level = level*((genFrequencyLabelsHorizontal[x]*0.08+55.)/80.);
+        }
+        else{
+          level = level*((3000*0.08+55)/80.);
+        }
+      }
+      if (levelEq>0.05) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = BIN_WIDTH*x + i;
             color_spectrum_update(j,255*levelEq*5,colorRange,startColor);
@@ -292,7 +296,7 @@ void color_spectrum_half_wrap(bool useEq){
           level = level*((genFrequencyHalfLabelsHorizontal[x]*0.08+55.)/80.);
         }
         else{
-          level = level*((4000*0.08+55)/80.);
+          level = level*((3000*0.08+55)/80.);
         }
       }
       right = HALF_NUM_BINS - x;
