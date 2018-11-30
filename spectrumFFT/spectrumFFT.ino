@@ -26,8 +26,8 @@ float thresholdVertical[max_height];
 
 
 
-float decay = 0.96;
-const int colorRange = 80;
+float decay = 0.97;
+const int colorRange = 255;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
 const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
@@ -79,6 +79,8 @@ float genFrequencyLabelsHorizontal[NUM_BINS];
 
 int genFrequencyHalfBinsHorizontal[HALF_NUM_BINS];
 float genFrequencyHalfLabelsHorizontal[HALF_NUM_BINS];
+float logLevelsEq[HALF_NUM_BINS];
+
 //Array with some clipping to highest frequencies
 int frequencyBinsHorizontal[60] = {
    1,  1,  1,  1,  1,
@@ -94,8 +96,10 @@ int frequencyBinsHorizontal[60] = {
    15, 15, 15, 15, 16,
    16, 17, 18, 19, 21
 };
-int startTime = 0;
+
+int startTimer = 0;
 int timer = 0;
+int counter = 0;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
@@ -108,9 +112,9 @@ void setup() {
   Serial.begin(9600);
   Serial.println("setup");
   writeFrequencyBinsHorizontal();
-  
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
   //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
+  
   color_spectrum_half_wrap_setup();
   //color_spectrum_setup(255,0);
 
@@ -131,12 +135,15 @@ void loop() {
       color_spectrum_half_wrap(true);
       //color_spectrum(255,0);
       FastLED.show();
+      //Serial.println(millis());
   }
+
   //choose any time based modifiers
   timer = millis();
-  if(timer - startTime > 100){
+  if(timer-startTimer > 100){
     moving_color_spectrum_half_wrap();    //modifies color mapping
-    startTime = millis();
+    startTimer = millis();
+    //FastLED.show();
   }
   
 }
@@ -178,9 +185,20 @@ void writeFrequencyBinsHorizontal(){
   }
   sum = 0;
   for (int i=0; i<HALF_NUM_BINS;i++){
-    genFrequencyHalfLabelsHorizontal[i] = genFrequencyBinsHorizontal[i]*binFreq + sum;
+    genFrequencyHalfLabelsHorizontal[i] = genFrequencyHalfBinsHorizontal[i]*binFreq + sum;
+    //logLevelsEq[i] = (log10(genFrequencyHalfLabelsHorizontal[i])*0.00875+65.)/60.;
+    if(genFrequencyHalfLabelsHorizontal[i]<4500){
+      //logLevelsEq[i] = float(genFrequencyHalfLabelsHorizontal[i]*0.0875 + 45)/65;
+      logLevelsEq[i] = (float(log10(genFrequencyHalfLabelsHorizontal[i])*0.01+70.))/65.;
+
+    }
+    else{
+      logLevelsEq[i] = (float(-log10(genFrequencyHalfLabelsHorizontal[i])*0.01 + 140.))/65.;
+    }
+
     sum = genFrequencyHalfLabelsHorizontal[i];
   }
+  
 }
 
 //----------------------------------------------------------------------
@@ -224,58 +242,59 @@ void color_spectrum_half_wrap_setup() {
 //REACTIVE----LEDS MODIFIERS
 
 //Frequency reactive, uses color from 
-void color_spectrum(int colorRange, int startColor){
-  unsigned int x, freqBin;
-  float level;
-  float levelEq;
-  int val;
-  int j;
-  freqBin = 0;
-  for (x=0; x < NUM_BINS; x++) {
-      // get the volume for each horizontal pixel position
-      level = fft.read(freqBin, freqBin + genFrequencyBinsHorizontal[x] - 1);
-      //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
-      if(true){
-        if(genFrequencyLabelsHorizontal[x]<4000){
-          level = level*((genFrequencyLabelsHorizontal[x]*0.08+55.)/80.);
-        }
-        else{
-          level = level*((3000*0.08+55)/80.);
-        }
-      }
-      if (levelEq>0.05) {
-          for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*x + i;
-            color_spectrum_update(j,255*levelEq*5,colorRange,startColor);
-          }
-
-          
-        } else {
-          for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*x + i;
-            val = hsv_leds[j].val;
-            if(val < 20){
-              color_spectrum_update(j,0,colorRange,startColor);
-            }
-            color_spectrum_update(j,val*decay,colorRange,startColor);
-          }
-          
-         
-        }
-        
-      // increment the frequency bin count, so we display
-      // low to higher frequency from left to right
-      freqBin = freqBin + genFrequencyBinsHorizontal[x];
-    }
-}
-
-void color_spectrum_update(int index, float level,int colorRange, int startColor) {
-  float number = index * colorRange;
-  float number1 = number / NUM_LEDS;
-  float number2 = floor(number1);
-  leds[index] = CHSV((number2 + startColor),255,level);
-  hsv_leds[index] = CHSV((number2 + startColor),255,level);
-}
+//void color_spectrum(int colorRange, int startColor){
+//  unsigned int x, freqBin;
+//  float level;
+//  float levelEq;
+//  int val;
+//  int j;
+//  freqBin = 0;
+//  for (x=0; x < NUM_BINS; x++) {
+//      // get the volume for each horizontal pixel position
+//      level = fft.read(freqBin, freqBin + genFrequencyBinsHorizontal[x] - 1);
+//      //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
+//      if(true){
+//        if(genFrequencyLabelsHorizontal[x]<5000){
+//          level = level*((genFrequencyLabelsHorizontal[x]*0.085+65.)/80.);
+//        }
+//        else{
+//          level = level*((4000*0.08+55)/80.);
+//        }
+//      }
+//      level = 0.2;
+//      if (level>0.03) {
+//          for(int i=0;i<BIN_WIDTH;i++){
+//            j = BIN_WIDTH*x + i;
+//            color_spectrum_update(j,255*levelEq*5,colorRange,startColor);
+//          }
+//
+//          
+//        } else {
+//          for(int i=0;i<BIN_WIDTH;i++){
+//            j = BIN_WIDTH*x + i;
+//            val = hsv_leds[j].val;
+//            if(val < 20){
+//              color_spectrum_update(j,0,colorRange,startColor);
+//            }
+//            color_spectrum_update(j,val*decay,colorRange,startColor);
+//          }
+//          
+//         
+//        }
+//        
+//      // increment the frequency bin count, so we display
+//      // low to higher frequency from left to right
+//      freqBin = freqBin + genFrequencyBinsHorizontal[x];
+//    }
+//}
+//
+//void color_spectrum_update(int index, float level,int colorRange, int startColor) {
+//  float number = index * colorRange;
+//  float number1 = number / NUM_LEDS;
+//  float number2 = floor(number1);
+//  leds[index] = CHSV((number2 + startColor),255,level);
+//  hsv_leds[index] = CHSV((number2 + startColor),255,level);
+//}
 
 
 
@@ -295,33 +314,31 @@ void color_spectrum_half_wrap(bool useEq){
        //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
       if(useEq==true){
-        if(genFrequencyHalfLabelsHorizontal[x]<4000){
-          level = level*((genFrequencyHalfLabelsHorizontal[x]*0.08+55.)/80.);
-        }
-        else{
-          level = level*((3000*0.08+55)/80.);
-        }
+        level = level*logLevelsEq[x]*255*5; 
       }
-      right = HALF_NUM_BINS - x;
-      left = HALF_NUM_BINS + x;
+      
+      right = (HALF_NUM_BINS - x)*BIN_WIDTH;
+      left = (HALF_NUM_BINS + x)*BIN_WIDTH;
       // uncomment to see the spectrum in Arduino's Serial Monitor
       Serial.println(level);
-      
-      if (level>0.1) {
+      //uncomment for full spec
+      //level = 255;
+
+      if (level>100) {
           for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*right - i - 1;
-            k = BIN_WIDTH*left + i;
-            color_spectrum_half_wrap_update(j,255*level*5);
-            color_spectrum_half_wrap_update(k,255*level*5);
+            j = right - i - 1;
+            k = left + i;
+            color_spectrum_half_wrap_update(j,level);
+            color_spectrum_half_wrap_update(k,level);
           }
 
           
         } else {
           for(int i=0;i<BIN_WIDTH;i++){
-            j = BIN_WIDTH*right - i - 1;
-            k = BIN_WIDTH*left + i;
+            j = right - i - 1;
+            k = left + i;
             j_val = hsv_leds[j].val;
-            if(j_val < 20){
+            if(j_val < 15){
               color_spectrum_half_wrap_update(j,0);
               color_spectrum_half_wrap_update(k,0);
             }else{
@@ -357,10 +374,10 @@ void color_spectrum_half_wrap_update(int index, float level) {
 
 void moving_color_spectrum_half_wrap(){
   CHSV fled = fleds[0];
-  for(int i = 0;i<(NUM_FLEDS - 1);i++){
+  for(int i=0;i<(NUM_FLEDS-1);i++){
     fleds[i] = fleds[i+1];
   }
-  fleds[NUM_FLEDS - 1] = fled;
+  fleds[NUM_FLEDS-1] = fled;
 }
 
 //----------------------------------------------------------------------
