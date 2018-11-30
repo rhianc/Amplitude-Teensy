@@ -307,7 +307,7 @@ void color_spectrum_half_wrap(bool useEq){
       // uncomment to see the spectrum in Arduino's Serial Monitor
       Serial.println(level);
       
-      if (level>0.04) {
+      if (level>0.1) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = BIN_WIDTH*right - i - 1;
             k = BIN_WIDTH*left + i;
