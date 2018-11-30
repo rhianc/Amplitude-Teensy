@@ -8,8 +8,8 @@
 #include "FastLED.h"
 #include <math.h>
 
-#define NUM_LEDS 200
-#define BIN_WIDTH 1
+#define NUM_LEDS 150
+#define BIN_WIDTH 3
 
 // MATRIX VARIABLES FROM BEFORE
 const unsigned int matrix_width = 60;
@@ -27,10 +27,13 @@ float thresholdVertical[max_height];
 
 
 float decay = 0.96;
-int HALF_LEDS = floor(NUM_LEDS/2);
+const int colorRange = 80;
+const int startColor = 0;
+const int HALF_LEDS = floor(NUM_LEDS/2);
+const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
 CRGB leds[NUM_LEDS];
 CHSV hsv_leds[NUM_LEDS];
-CHSV fleds[NUM_LEDS / 2];
+CHSV fleds[NUM_FLEDS];
 
 //PINS!
 const int AUDIO_INPUT_PIN = 7;        // Input ADC pin for audio data.
@@ -91,7 +94,7 @@ int frequencyBinsHorizontal[60] = {
    15, 15, 15, 15, 16,
    16, 17, 18, 19, 21
 };
-
+int startTime = 0;
 int timer = 0;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -108,8 +111,7 @@ void setup() {
   
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
   //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
-  
-  color_spectrum_half_wrap_setup(255,0);
+  color_spectrum_half_wrap_setup();
   //color_spectrum_setup(255,0);
 
 //initialize strip object
@@ -130,12 +132,12 @@ void loop() {
       //color_spectrum(255,0);
       FastLED.show();
   }
-
   //choose any time based modifiers
   timer = millis();
-//  if(timer%10000== 0){
-//    moving_color_spectrum_half_wrap(1);    //modifies color mapping
-//  }
+  if(timer - startTime > 100){
+    moving_color_spectrum_half_wrap();    //modifies color mapping
+    startTime = millis();
+  }
   
 }
 
@@ -199,12 +201,13 @@ void color_spectrum_setup(int colorRange, int startColor) {
 }
 
 //creates full spectrum from center out, input variables determine amount of full spectrum to use (i.e can limit to smaller color ranges)
-void color_spectrum_half_wrap_setup(int colorRange, int startColor) {
-  for (int i = 0;i < HALF_LEDS; i++){
-    float number = i * colorRange;
-    float number1 = number / HALF_LEDS;
+void color_spectrum_half_wrap_setup() {
+  for (int i = 0;i < NUM_FLEDS/2; i++){
+    float number = i * 255;
+    float number1 = number / (NUM_FLEDS/2);
     float number2 = floor(number1);
     fleds[i] = CHSV((number2 + startColor),255,0);
+    fleds[NUM_FLEDS - i - 1] = CHSV((number2 + startColor),255,0);
   }
   for (int i = 0; i< HALF_LEDS; i++){
     leds[HALF_LEDS - i - 1] = fleds[i];
@@ -352,19 +355,12 @@ void color_spectrum_half_wrap_update(int index, float level) {
   }
 }
 
-void moving_color_spectrum_half_wrap(int deltaHue){
-  unsigned int x;
-  int right;
-  int f_index;
-  CHSV fled;
-  for (x=0; x < ceil(NUM_LEDS*0.5); x++) {
-      // get the volume for each horizontal pixel position
-      right = ceil(NUM_LEDS*0.5) - x -1;
-      //moving_color_spectrum_half_wrap_update(right,255, deltaHue);
-      f_index = abs(right - HALF_LEDS +1);  //negative index starts from  end and works back
-      fled = fleds[f_index];
-      fleds[f_index] = CHSV(fled.hue+deltaHue,255,fled.val);
-    }
+void moving_color_spectrum_half_wrap(){
+  CHSV fled = fleds[0];
+  for(int i = 0;i<(NUM_FLEDS - 1);i++){
+    fleds[i] = fleds[i+1];
+  }
+  fleds[NUM_FLEDS - 1] = fled;
 }
 
 //----------------------------------------------------------------------
