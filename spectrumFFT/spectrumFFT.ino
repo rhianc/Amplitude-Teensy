@@ -26,8 +26,8 @@ float thresholdVertical[max_height];
 
 
 
-float decay = 0.97;
-const int colorRange = 255;
+float decay = 0.98;
+const int colorRange = 80;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
 const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
@@ -324,7 +324,7 @@ void color_spectrum_half_wrap(bool useEq){
       //uncomment for full spec
       //level = 255;
 
-      if (level>100) {
+      if (level>50 + BIN_WIDTH*50) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = right - i - 1;
             k = left + i;
