@@ -1,9 +1,9 @@
 #include "FastLED.h"
-#include "kiss_fft.h"
+//#include "kiss_fft.h"
 
 
 // How many leds in your strip?
-#define NUM_LEDS 150
+#define NUM_LEDS 300
 #define serialYes true
 
 // For led chips like Neopixels, which have a data line, ground, and power, you just
@@ -67,8 +67,8 @@ class LightStarter{
           float number = i * 255;
           float number1 = number / NUM_LEDS;
           float number2 = floor(number1);
-          fleds[i] = CHSV(number2,255,255);
-          fleds[2*NUM_LEDS - i - 1] = CHSV(number2,255,255);
+          fleds[i] = CHSV(number2,255,180); //reduced brightness
+          fleds[2*NUM_LEDS - i - 1] = CHSV(number2,255,180); //reduced brightness
         }
         for (int i = 0; i< NUM_LEDS/2; i++){
           leds[NUM_LEDS/2 - i - 1] = fleds[i];
@@ -242,7 +242,8 @@ class LightStarter{
 void setup() {
   Serial.begin(500);
   // PUT YOUR STARTING COLORS HERE
-  lightStarter.color_spectrum_half_wrap();
+  //lightStarter.color(CHSV(200, 255, 130)); // chill blue
+  lightStarter.color_spectrum_half_wrap(); //rainbow wrap
 
   // Uncomment/edit one of the following lines for your leds arrangement.
   // FastLED.addLeds<TM1803, DATA_PIN, RGB>(leds, NUM_LEDS);
@@ -251,12 +252,15 @@ void setup() {
 //  FastLED.addLeds<WS2811, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<WS2812, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<WS2812B, DATA_PIN, RGB>(leds, NUM_LEDS);
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  //FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   // FastLED.addLeds<APA104, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<UCS1903, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<UCS1903B, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<GW6205, DATA_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<GW6205_400, DATA_PIN, RGB>(leds, NUM_LEDS);
+
+  FastLED.addLeds<NEOPIXEL, 8>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, 10>(leds, NUM_LEDS);
 
   // FastLED.addLeds<WS2801, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<SM16716, RGB>(leds, NUM_LEDS);
@@ -271,6 +275,8 @@ void setup() {
   // FastLED.addLeds<P9813, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<APA102, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
   // FastLED.addLeds<DOTSTAR, DATA_PIN, CLOCK_PIN, RGB>(leds, NUM_LEDS);
+
+  FastLED.show();
 }
 class LightChanger{
     public: void merge() {
@@ -343,6 +349,7 @@ class LightChanger{
 } lightChanger;
 
 void loop() {
+  
   lightChanger.merge_half_wrap();
   FastLED.show();
   delay(100);
