@@ -67,7 +67,7 @@ void setup() {
   color_spectrum_half_wrap_setup();
   //color_spectrum_setup(255,0);
 
-  //initialize strip object
+  //initialize strip objects
   FastLED.addLeds<NEOPIXEL, 8>(leds, NUM_LEDS); // using pin 8
   FastLED.addLeds<NEOPIXEL, 10>(leds, NUM_LEDS); // using pin 10
   FastLED.show();
@@ -95,8 +95,9 @@ void loop() {
 
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
+  // why is there a 60 in the exponent, is M_E e? 
   int sum = 0;
-  int binFreq = 44;
+  int binFreq = 43; // stated on website
   for (int i=0; i < NUM_BINS; i++){
     genFrequencyBinsHorizontal[i] = ceil(60./NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./NUM_BINS)));
   }
@@ -153,7 +154,6 @@ void color_spectrum_half_wrap_setup() {
     hsv_leds[HALF_LEDS + i] = fleds[i];
   }
 }
-
 
 void color_spectrum_half_wrap(bool useEq){
   unsigned int x, freqBin;
