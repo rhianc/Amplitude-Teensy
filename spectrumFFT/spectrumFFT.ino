@@ -10,6 +10,8 @@
 #define NUM_LEDS 300 // per strip
 #define BIN_WIDTH 1 // lights with the same frequency assignment
 
+int state = 0; // used to determine which type of lights we currently want
+
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
@@ -58,6 +60,7 @@ int counter = 0;
 
 // Run setup once
 void setup() {
+  pinMode(15, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
   AudioMemory(12); // this is probably why the longer FFT wasn't working, didn't add more memory
   writeFrequencyBinsHorizontal();
@@ -68,24 +71,49 @@ void setup() {
   //color_spectrum_setup(255,0);
 
   //initialize strip objects
-  FastLED.addLeds<NEOPIXEL, 8>(leds, NUM_LEDS); // using pin 8
+  FastLED.addLeds<NEOPIXEL, 8>(leds, NUM_LEDS); // using pin 8 // 
   FastLED.addLeds<NEOPIXEL, 10>(leds, NUM_LEDS); // using pin 10
   FastLED.show();
 }
 
 void loop() {
-   //check if Audio processing for that sample frame is compelte
-   if (fft.available()) {
-      // uncomment spectrum visual type
-      color_spectrum_half_wrap(true);
-      FastLED.show();
+  // see if need to change state of LEDS to boring or na
+  checkButtonChange();
+  // state 0 is FFT, state 1 is boring
+  if (state == 0){
+      //check if Audio processing for that sample frame is compelte
+    if (fft.available()) {
+        color_spectrum_half_wrap(true);
+        FastLED.show();
+    }
+    //choose any time based modifiers
+    timer = millis();
+    if(timer-startTimer > 100){
+        moving_color_spectrum_half_wrap();    //modifies color mapping
+        startTimer = millis();
+    }
   }
-
-  //choose any time based modifiers
-  timer = millis();
-  if(timer-startTimer > 100){
-    moving_color_spectrum_half_wrap();    //modifies color mapping
-    startTimer = millis();
+  else{
+      merge_half_wrap_boring();
+      FastLED.show();
+      delay(100);
+  }
+  
+}
+//-----------------------------------------------------------------------
+//------------------------Button for State Change------------------------
+//-----------------------------------------------------------------------
+void checkButtonChange(){
+  if (digitalRead(15)==LOW){
+    state = (state+1)%2;
+    if (state == 0){
+      writeFrequencyBinsHorizontal();
+      color_spectrum_half_wrap_setup();
+    }
+    else{
+      color_spectrum_half_wrap_boring();
+    }
+    delay(500);
   }
 }
 
@@ -98,13 +126,13 @@ void writeFrequencyBinsHorizontal(){
   // why is there a 60 in the exponent, is M_E e? 
   int sum = 0;
   int binFreq = 43; // stated on website
-  for (int i=0; i < NUM_BINS; i++){
+  for (int i=0; i < NUM_BINS; i++){ // used when starting from end of strip
     genFrequencyBinsHorizontal[i] = ceil(60./NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./NUM_BINS)));
   }
-  for (int i=0; i < HALF_NUM_BINS; i++){
+  for (int i=0; i < HALF_NUM_BINS; i++){ // used when starting from center of strip
     genFrequencyHalfBinsHorizontal[i] = ceil(60./HALF_NUM_BINS*0.7964*pow(M_E,0.0583*(i + 1)*(60./HALF_NUM_BINS)));
   }
-  for (int i=0; i<NUM_BINS;i++){
+  for (int i=0; i<NUM_BINS;i++){ // has the value of the frequency for each bin
     genFrequencyLabelsHorizontal[i] = genFrequencyBinsHorizontal[i]*binFreq + sum;
     sum = genFrequencyLabelsHorizontal[i];
   }
@@ -232,4 +260,34 @@ void moving_color_spectrum_half_wrap(){
   }
   fleds[NUM_FLEDS-1] = fled;
 }
+
+//----------------------------------------------------------------------
+//---------------------------For NON-Reactive---------------------------
+//----------------------------------------------------------------------
+
+void color_spectrum_half_wrap_boring() {
+        for (int i = 0;i < NUM_LEDS; i++){
+          float number = i * 255;
+          float number1 = number / NUM_LEDS;
+          float number2 = floor(number1);
+          fleds[i] = CHSV(number2,255,180); //reduced brightness
+          fleds[2*NUM_LEDS - i - 1] = CHSV(number2,255,180); //reduced brightness
+        }
+        for (int i = 0; i< NUM_LEDS/2; i++){
+          leds[NUM_LEDS/2 - i - 1] = fleds[i];
+          leds[NUM_LEDS/2 + i] = fleds[i];
+        }
+      }
+
+void merge_half_wrap_boring() {
+      CHSV jawnski = fleds[0];
+      for (int j = 0; j< 2*NUM_LEDS - 1; j++){
+          fleds[j] = fleds[j+1];
+        }
+      fleds[2*NUM_LEDS - 1] = jawnski;
+      for (int i = 0; i< NUM_LEDS/2; i++){
+          leds[NUM_LEDS/2 - i - 1] = fleds[i];
+          leds[NUM_LEDS/2 + i] = fleds[i];
+        }
+    }
 
