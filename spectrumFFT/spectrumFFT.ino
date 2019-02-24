@@ -93,7 +93,7 @@ void loop() {
         startTimer = millis();
     }
   }
-  else{
+  else if (state == 1){
       merge_half_wrap_boring();
       FastLED.show();
       delay(100);
@@ -105,15 +105,19 @@ void loop() {
 //-----------------------------------------------------------------------
 void checkButtonChange(){
   if (digitalRead(15)==LOW){
-    state = (state+1)%2;
+    state = (state+1)%3;
     if (state == 0){
       writeFrequencyBinsHorizontal();
       color_spectrum_half_wrap_setup();
     }
-    else{
+    else if (state == 1){
       color_spectrum_half_wrap_boring();
     }
-    delay(500);
+    else{
+      fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
+      FastLED.show();
+    }
+    delay(200);
   }
 }
 
