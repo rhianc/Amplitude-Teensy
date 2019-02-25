@@ -152,7 +152,7 @@ void checkButtonChange(){
       break;
     
     }
-    delay(50);
+    delay(100);
   }
 }
 
@@ -250,13 +250,8 @@ void color_spectrum_half_wrap(bool useEq){
       if(useEq==true){
         level = level*logLevelsEq[x]*255*5; 
       }
-      
       right = (HALF_NUM_BINS - x)*BIN_WIDTH;
       left = (HALF_NUM_BINS + x)*BIN_WIDTH;
-      // uncomment to see the spectrum in Arduino's Serial Monitor
-      //Serial.println(level);
-      //uncomment for full spec
-      //level = 255;
 
       if (level>40) {
           for(int i=0;i<BIN_WIDTH;i++){
@@ -296,7 +291,6 @@ void color_spectrum_wrap(bool useEq){
   int left;
   freqBin = 0;
   for (x=0; x < NUM_BINS; x++) {
-    
       level = fft.read(freqBin, freqBin + genFrequencyBinsHorizontal[x] - 1);
        //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
@@ -401,7 +395,6 @@ void merge_half_wrap_boring() {
         }
     }
 
-
 //----------------------------------------------------------------------
 //-------------------------For Beat Detection---------------------------
 //----------------------------------------------------------------------
@@ -418,8 +411,6 @@ float prevBassPower = 0;
 bool beatDetector(){
   // return true if beat detected
   float newBassPower = getBassPower(maxBassCutoffBin);
-  
-  Serial.println(newBassPower-prevBassPower); 
   if (newBassPower - prevBassPower > beatThreshold){
     // beat detected!
     prevBassPower = newBassPower;
@@ -443,7 +434,7 @@ void beatDetectorUpdate(){
 }
 
 int choose_random_color(){
-  return (rand() % (255 + 1 - 0) + 0);
+  return (rand() % 256);
 }
 
 //----------------------------------------------------------------------
