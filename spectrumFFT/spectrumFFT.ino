@@ -4,8 +4,9 @@
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
-#include "FastLED.h"
+//#include "FastLED.h"
 #include <math.h>
+#include <WS2812Serial.h>
 
 #define NUM_LEDS 300 // per strip
 #define BIN_WIDTH 3 // lights with the same frequency assignment
@@ -13,6 +14,7 @@
 int state = 0; // used to determine which type of lights we currently want
 float beatThreshold = 0.045; // 
 int maxBassCutoffBin = 10;
+int wrapSpeedForChillLights = 100;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
@@ -36,24 +38,30 @@ CHSV fleds[NUM_FLEDS];
 
 // PINS!
 const int AUDIO_INPUT_PIN = 14;        // Input ADC pin for audio data.
+const int OUTPUT_PIN_0 = 8;     // First LED Strip
+const int OUTPUT_PIN_1 = 10;      // Second LED Strip
 // Binning
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
 // Audio library objects
-AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       //xy=99,55
-AudioAnalyzeFFT1024      fft;                         //xy=265,75
+AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       
+AudioAnalyzeFFT1024      fft;                         
 AudioConnection          patchCord1(adc1, fft);
 
-//empty array for generating 
+// empty arrays for generating 
+
+// full strip
 int genFrequencyBinsHorizontal[NUM_BINS];
 float genFrequencyLabelsHorizontal[NUM_BINS];
 float logLevelsEqLong[NUM_BINS];
 
+// half strip centered
 int genFrequencyHalfBinsHorizontal[HALF_NUM_BINS];
 float genFrequencyHalfLabelsHorizontal[HALF_NUM_BINS];
 float logLevelsEq[HALF_NUM_BINS];
 
+// not 100% sure where these are used
 int startTimer = 0;
 int timer = 0;
 int counter = 0;
@@ -66,7 +74,7 @@ void setup() {
   Serial.begin(9600);
   pinMode(15, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
-  AudioMemory(12); // this is probably why the longer FFT wasn't working, didn't add more memory
+  AudioMemory(12); // this is probably why the longer FFT wasn't working, is this the right amount??
   writeFrequencyBinsHorizontal();
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
   //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
@@ -75,51 +83,57 @@ void setup() {
   //color_spectrum_setup(255,0);
 
   //initialize strip objects
-  FastLED.addLeds<NEOPIXEL, 8>(leds, NUM_LEDS); // using pin 8 
-  FastLED.addLeds<NEOPIXEL, 10>(leds, NUM_LEDS); // using pin 10
+  FastLED.addLeds<NEOPIXEL, OUTPUT_PIN_0>(leds, NUM_LEDS); // using pin 8 
+  FastLED.addLeds<NEOPIXEL, OUTPUT_PIN_1>(leds, NUM_LEDS); // using pin 10
   FastLED.show();
 }
 
 void loop() {
   // see if need to change state of LEDS to boring or na
   checkButtonChange();
-  // state 0 is FFT, state 1 is boring
-  if (state == 0){
+  switch (state){
+    case 0:
       //check if Audio processing for that sample frame is compelte
-    if (fft.available()) {
-        color_spectrum_half_wrap(true);
-        FastLED.show();
-    }
-    //choose any time based modifiers
-    timer = millis();
-    if(timer-startTimer > 100){
-        moving_color_spectrum_half_wrap();    //modifies color mapping
-        startTimer = millis();
-    }
-  }
-  else if (state == 1){
-    //check if Audio processing for that sample frame is complete
-    if (fft.available()) {
-        color_spectrum_wrap(true);
-        FastLED.show();
-    }
-    //choose any time based modifiers
-    timer = millis();
-    if(timer-startTimer > 100){
-        moving_color_spectrum_half_wrap();    //modifies color mapping
-        startTimer = millis();
-    }
-  }
-  else if (state == 2){
-    beatDetectorUpdate();
-    FastLED.show();
-  }
-  else if (state == 3){
+      if (fft.available()) {
+         color_spectrum_half_wrap(true);
+         FastLED.show();
+      }
+      //choose any time based modifiers
+      timer = millis();
+      if(timer-startTimer > 100){
+         moving_color_spectrum_half_wrap();    //modifies color mapping
+          startTimer = millis();
+      }
+      break;
+
+    case 1:
+      //check if Audio processing for that sample frame is complete
+      if (fft.available()) {
+         color_spectrum_wrap(true);
+          FastLED.show();
+      }
+      //choose any time based modifiers
+      timer = millis();
+      if(timer-startTimer > 100){
+          moving_color_spectrum_half_wrap();    //modifies color mapping
+          startTimer = millis();
+      }
+      break;
+
+    case 2:
+      beatDetectorUpdate();
+      FastLED.show();
+      break;
+
+    case 3:
       merge_half_wrap_boring();
       FastLED.show();
-      delay(100);
+      delay(wrapSpeedForChillLights);
+      break;
+
+    default:
+      break;
   }
-  
 }
 //-----------------------------------------------------------------------
 //------------------------Button for State Change------------------------
@@ -152,7 +166,7 @@ void checkButtonChange(){
       break;
     
     }
-    delay(100);
+    delay(70);
   }
 }
 
