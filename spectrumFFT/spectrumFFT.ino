@@ -11,6 +11,8 @@
 #define BIN_WIDTH 3 // lights with the same frequency assignment
 
 int state = 0; // used to determine which type of lights we currently want
+float beatThreshold = 0.042; // 
+int maxBassCutoffBin = 16;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
@@ -125,24 +127,32 @@ void loop() {
 void checkButtonChange(){
   if (digitalRead(15)==LOW){
     state = (state+1)%5;
-    if (state == 0){
+    switch (state){
+      
+    case 0 :
       writeFrequencyBinsHorizontal();
       color_spectrum_half_wrap_setup();
-    }
-    else if (state == 1){
+      break;
+    
+    case 1 : 
       color_spectrum_setup();
-    }
-    else if (state == 2){
+      break;
+    
+    case 2 :
       color_spectrum_half_wrap_boring(); // change to a single color that changes on the beat
-    }
-    else if (state == 3){
+      break;
+    
+    case 3:
       color_spectrum_half_wrap_boring();
-    }
-    else{
+      break;
+    
+    default:
       fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
       FastLED.show();
+      break;
+    
     }
-    delay(100);
+    delay(50);
   }
 }
 
@@ -344,7 +354,6 @@ void color_spectrum_wrap_update(int index, float level) {
     int f_index = index;
     CHSV fled = fleds[f_index];
     leds[index] = CHSV(fled.hue,255,level);
-    //leds[10] = CHSV(fled.hue,255,255);
     hsv_leds[index] = CHSV(fled.hue,255,level);
   }
 }
@@ -357,7 +366,10 @@ void moving_color_spectrum_half_wrap(){
   fleds[NUM_FLEDS-1] = fled;
 }
 
-
+double logspacedel(double startFreq, double stopFreq, int n, int N)
+{
+  return (startFreq * pow(stopFreq/startFreq, n/(double)(N-1))) - (startFreq * pow(stopFreq/startFreq, (n-1)/(double)(N-1)));
+}
 
 //----------------------------------------------------------------------
 //---------------------------For NON-Reactive---------------------------
@@ -405,9 +417,9 @@ float prevBassPower = 0;
 
 bool beatDetector(){
   // return true if beat detected
-  float newBassPower = getBassPower(17);
+  float newBassPower = getBassPower(maxBassCutoffBin);
   //Serial.println(newBassPower-prevBassPower); 
-  if (newBassPower - prevBassPower > 0.04){
+  if (newBassPower - prevBassPower > beatThreshold){
     // beat detected!
     prevBassPower = newBassPower;
     return true;
