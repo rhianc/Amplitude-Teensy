@@ -11,8 +11,8 @@
 #define BIN_WIDTH 3 // lights with the same frequency assignment
 
 int state = 0; // used to determine which type of lights we currently want
-float beatThreshold = 0.042; // 
-int maxBassCutoffBin = 16;
+float beatThreshold = 0.045; // 
+int maxBassCutoffBin = 10;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
@@ -139,7 +139,7 @@ void checkButtonChange(){
       break;
     
     case 2 :
-      color_spectrum_half_wrap_boring(); // change to a single color that changes on the beat
+      fill_solid(leds, NUM_LEDS, CHSV(int(choose_random_color()), 255, 255));
       break;
     
     case 3:
@@ -418,7 +418,8 @@ float prevBassPower = 0;
 bool beatDetector(){
   // return true if beat detected
   float newBassPower = getBassPower(maxBassCutoffBin);
-  //Serial.println(newBassPower-prevBassPower); 
+  
+  Serial.println(newBassPower-prevBassPower); 
   if (newBassPower - prevBassPower > beatThreshold){
     // beat detected!
     prevBassPower = newBassPower;
@@ -430,24 +431,20 @@ bool beatDetector(){
   }
 }
 
-int tick = 0;
 int beatTimer = 16;
 
 void beatDetectorUpdate(){
   // already checked if new FFT available
   if (beatDetector() && beatTimer > 15){
-    if (tick == 0){
-      fill_solid(leds, NUM_LEDS, CRGB::Red);
-    }
-    else{
-      fill_solid(leds, NUM_LEDS, CRGB::Blue);
-    }
-    tick = (tick + 1) % 2;
+    fill_solid(leds, NUM_LEDS, CHSV(int(choose_random_color()), 255, 150));
     beatTimer = 0;
   }
   beatTimer += 1;
 }
 
+int choose_random_color(){
+  return (rand() % (255 + 1 - 0) + 0);
+}
 
 //----------------------------------------------------------------------
 //------------------------------For Ripple------------------------------
