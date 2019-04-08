@@ -7,14 +7,21 @@
 #include "FastLED.h"
 #include <math.h>
 #include <WS2812Serial.h>
+#include <SD.h>
+#include <SerialFlash.h>
 
 #define NUM_LEDS 300 // per strip
-#define BIN_WIDTH 3 // lights with the same frequency assignment
+#define BIN_WIDTH 1 // lights with the same frequency assignment
+
+#define TtoTSerial Serial3 // Serial Communication with other teensy
 
 int state = 0; // used to determine which type of lights we currently want
 float beatThreshold = 0.045; // 
 int maxBassCutoffBin = 10;
 int wrapSpeedForChillLights = 100;
+
+// Line IN
+const int myInput = AUDIO_INPUT_LINEIN;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
@@ -27,29 +34,37 @@ const float linearBlend = 0.4;   // useful range is 0 to 0.7
 // the 3 parameters above.
 float thresholdVertical[max_height];
 
-float decay = 0.98;
+float decay = 0.93;
 const int colorRange = 80;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
 const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
-//CRGB leds[NUM_LEDS];
+CRGB leds[NUM_LEDS];
 CHSV hsv_leds[NUM_LEDS];
 CHSV fleds[NUM_FLEDS];
 
 // PINS!
 const int AUDIO_INPUT_PIN = 14;        // Input ADC pin for audio data.
-
-// don't forget to change this
-const int OUTPUT_PIN_0 = 1;     // First LED Strip 
+const int OUTPUT_PIN_0 = 1;     // First LED Strip
 const int OUTPUT_PIN_1 = 5;      // Second LED Strip
 // Binning
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
 // Audio library objects
+AudioInputI2S            audioInput;         // audio shield: mic or line-in
+
+//AudioOutputI2S           audioOutput;                   // stream music to audio shield output
+//AudioConnection          patchCord2(audioInput, 0, audioOutput, 0);
+//AudioConnection          patchCord3(audioInput, 1, audioOutput, 1);
+
 AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       
-AudioAnalyzeFFT1024      fft;                         
-AudioConnection          patchCord1(adc1, fft);
+AudioAnalyzeFFT1024      fft;        
+
+AudioConnection          patchCord1(audioInput, 0, fft, 0);                 
+//AudioConnection          patchCord1(adc1, fft);
+
+AudioControlSGTL5000 audioShield;
 
 // empty arrays for generating 
 
@@ -67,66 +82,20 @@ float logLevelsEq[HALF_NUM_BINS];
 int startTimer = 0;
 int timer = 0;
 int counter = 0;
-
-// Initialize non-blocking LED control (need memory for each strip)
-// memory for strip 1
-byte drawingMemory0[NUM_LEDS*3];         //  3 bytes per LED
-DMAMEM byte displayMemory0[NUM_LEDS*12]; // 12 bytes per LED
-
-byte drawingMemory1[NUM_LEDS*3];         //  3 bytes per LED
-DMAMEM byte displayMemory1[NUM_LEDS*12]; // 12 bytes per LED
-
-WS2812Serial leds0(NUM_LEDS, displayMemory0, drawingMemory0, OUTPUT_PIN_0, WS2812_GRB);
-WS2812Serial leds1(NUM_LEDS, displayMemory0, drawingMemory0, OUTPUT_PIN_1, WS2812_GRB); // first only trying one memory since mirrors
-
-void turn_off() {
-  CRGB colorRef = CHSV(0,0,0);
-  for (int i = 0;i < NUM_LEDS; i++){
-    leds0.setPixel(i,colorRef.r,colorRef.g,colorRef.b);
-    leds1.setPixel(i,colorRef.r,colorRef.g,colorRef.b);
-  }
-}
-
-//----------------------------------------------------------------------
-//-------------------------For Beat Detection---------------------------
-//----------------------------------------------------------------------
-float getBassPower(int maxBin){
-  float power = 0;
-  for (int i = 1; i < maxBin + 1; i++){
-    power += pow(fft.read(i),2);
-  }
-  return power;
-}
-
-float prevBassPower = 0;
-
-bool beatDetector(){
-  // return true if beat detected
-  float newBassPower = getBassPower(maxBassCutoffBin);
-  if (newBassPower - prevBassPower > beatThreshold){
-    // beat detected!
-    prevBassPower = newBassPower;
-    return true;
-  }
-  else{
-    prevBassPower = newBassPower;
-    return false;
-  }
-}
-
-int beatTimer = 16;
-
-int choose_random_color(){
-  return (rand() % 256);
-}
-
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
 
 // Run setup once
 void setup() {
+  // Enable the audio shield and set the output volume.
+  audioShield.enable();
+  audioShield.inputSelect(myInput);
+  audioShield.volume(1);
+  
   Serial.begin(9600);
+  //TtoTSerial.begin(2000000); // highest zero-error baud rate
+  
   pinMode(15, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
   AudioMemory(12); // this is probably why the longer FFT wasn't working, is this the right amount??
@@ -138,14 +107,37 @@ void setup() {
   //color_spectrum_setup(255,0);
 
   //initialize strip objects
-  //FastLED.addLeds<NEOPIXEL, OUTPUT_PIN_0>(leds, NUM_LEDS); // using pin 8 
-  //FastLED.addLeds<NEOPIXEL, OUTPUT_PIN_1>(leds, NUM_LEDS); // using pin 10
-  //FastLED.show();
-  leds0.begin();
-  leds1.begin();
+  FastLED.addLeds<NEOPIXEL, OUTPUT_PIN_0>(leds, NUM_LEDS); // using pin 8 
+  FastLED.addLeds<NEOPIXEL, OUTPUT_PIN_1>(leds, NUM_LEDS); // using pin 10
+  FastLED.show();
 }
 
+const int highHex = 0xff00;
+const int lowHex = 0x00ff;
 
+float timeNow= micros();
+
+int testData = 12345;
+
+void sendFFT(){
+  for (int x = 0; x < 512; x++){
+    //int dataPoint = fft.output[x];
+    int dataPoint = 0;
+    TtoTSerial.write((byte)((dataPoint&highHex)>>8)); // transit MSBits first, cast to 8bit data
+    TtoTSerial.write((byte)(dataPoint&lowHex));  // transmit LSBits second, cast to 8bit data
+  }
+  float newTime = micros();
+  String difference = String(newTime - timeNow);
+  timeNow = newTime;
+  Serial.print("FFT Sent, microseconds elapsed: ");
+  Serial.print(difference);
+  Serial.print("\n");
+}
+
+void sendTest(){
+  TtoTSerial.write((byte)((testData&highHex)>>8)); // transit MSBits first, cast to 8bit data
+  TtoTSerial.write((byte)(testData&lowHex));  // transmit LSBits second, cast to 8bit data
+}
 
 void loop() {
   // see if need to change state of LEDS to boring or na
@@ -154,8 +146,10 @@ void loop() {
     case 0:
       //check if Audio processing for that sample frame is compelte
       if (fft.available()) {
-         color_spectrum_half_wrap(true);
-         //FastLED.show();
+        //sendTest();
+        //sendFFT();  // Send all FFT data to other teensy/teensies 
+        color_spectrum_half_wrap(true);  //Commented to test Serial FFT transmission
+        FastLED.show();
       }
       //choose any time based modifiers
       timer = millis();
@@ -169,7 +163,7 @@ void loop() {
       //check if Audio processing for that sample frame is complete
       if (fft.available()) {
          color_spectrum_wrap(true);
-          //FastLED.show();
+          FastLED.show();
       }
       //choose any time based modifiers
       timer = millis();
@@ -180,13 +174,13 @@ void loop() {
       break;
 
     case 2:
-      beatDetector();
-      //FastLED.show();
+      beatDetectorUpdate();
+      FastLED.show();
       break;
 
     case 3:
       merge_half_wrap_boring();
-      //FastLED.show();
+      FastLED.show();
       delay(wrapSpeedForChillLights);
       break;
 
@@ -212,8 +206,7 @@ void checkButtonChange(){
       break;
     
     case 2 :
-      color_spread(choose_random_color());
-      //fill_solid(leds, NUM_LEDS, CHSV(int(choose_random_color()), 255, 255));
+      fill_solid(leds, NUM_LEDS, CHSV(int(choose_random_color()), 255, 255));
       break;
     
     case 3:
@@ -221,7 +214,8 @@ void checkButtonChange(){
       break;
     
     default:
-      turn_off();
+      fill_solid(leds, NUM_LEDS, CRGB(0,0,0));
+      FastLED.show();
       break;
     
     }
@@ -262,7 +256,7 @@ void writeFrequencyBinsHorizontal(){
       logLevelsEq[i] = (float(log10(genFrequencyHalfLabelsHorizontal[i])*0.01+70.))/65.;
     }
     else{
-      logLevelsEq[i] = (float(-log10(genFrequencyHalfLabelsHorizontal[i])*0.01 + 140.))/65.;
+      logLevelsEq[i] = (float(-log10(genFrequencyHalfLabelsHorizontal[i])*0.01 + 100.))/65.;
     }
     sum = genFrequencyHalfLabelsHorizontal[i];
   }
@@ -280,13 +274,12 @@ void color_spectrum_setup() {
     float number = i * 255;
     float number1 = number/NUM_FLEDS;
     float number2 = floor(number1);
-    CHSV fled = CHSV((number2 + startColor),255,0);
-    CRGB led = fled;
-    leds0.setPixel(i, led.r, led.g, led.b);
-    leds1.setPixel(i, led.r, led.g, led.b);
-    hsv_leds[i]=fled;
-    //fleds[i] = CHSV((number2 + startColor),255,0);
-    //fleds[NUM_FLEDS - i - 1] = CHSV((number2 + startColor),255,0);
+    fleds[i] = CHSV((number2 + startColor),255,0);
+    fleds[NUM_FLEDS - i - 1] = CHSV((number2 + startColor),255,0);
+  }
+  for (int i = 0; i< NUM_LEDS; i++){
+    leds[NUM_LEDS - i - 1] = fleds[i];
+    hsv_leds[NUM_LEDS - i - 1] = fleds[i];
   }
 }
 
@@ -300,12 +293,9 @@ void color_spectrum_half_wrap_setup() {
     fleds[NUM_FLEDS - i - 1] = CHSV((number2 + startColor),255,0);
   }
   for (int i = 0; i< HALF_LEDS; i++){
-    CRGB fled = fleds[i];
-    leds0.setPixel(HALF_LEDS - i - 1,fled.r,fled.g,fled.b);
-    leds0.setPixel(HALF_LEDS + i,fled.r,fled.g,fled.b);
-    leds1.setPixel(HALF_LEDS - i - 1,fled.r,fled.g,fled.b);
-    leds1.setPixel(HALF_LEDS + i,fled.r,fled.g,fled.b);
+    leds[HALF_LEDS - i - 1] = fleds[i];
     hsv_leds[HALF_LEDS - i - 1] = fleds[i];
+    leds[HALF_LEDS + i] = fleds[i];
     hsv_leds[HALF_LEDS + i] = fleds[i];
   }
 }
@@ -407,16 +397,14 @@ void color_spectrum_half_wrap_update(int index, float level) {
     ;
   }else if(index >= HALF_LEDS){
     int f_index = index - HALF_LEDS;
-    CRGB fled = CHSV(fleds[f_index].hue,255,level);
-    leds0.setPixel(index,fled.r,fled.g,fled.b);
-    leds1.setPixel(index,fled.r,fled.g,fled.b);
-    hsv_leds[index] = CHSV(fleds[f_index].hue,255,level);
+    CHSV fled = fleds[f_index];
+    leds[index] = CHSV(fled.hue,255,level);
+    hsv_leds[index] = CHSV(fled.hue,255,level);
   }else{
     int f_index = abs(index - HALF_LEDS +1);
-    CRGB fled = CHSV(fleds[f_index].hue,255,level);
-    leds0.setPixel(index,fled.r,fled.g,fled.b);
-    leds1.setPixel(index,fled.r,fled.g,fled.b);
-    hsv_leds[index] = CHSV(fleds[f_index].hue,255,level);
+    CHSV fled = fleds[f_index];
+    leds[index] = CHSV(fled.hue,255,level);
+    hsv_leds[index] = CHSV(fled.hue,255,level);
   }
 }
 
@@ -425,10 +413,9 @@ void color_spectrum_wrap_update(int index, float level) {
     ;
   }else{
     int f_index = index;
-    CRGB fled = CHSV(fleds[f_index].hue,255,level);
-    leds0.setPixel(index,fled.r,fled.g,fled.b);
-    leds1.setPixel(index,fled.r,fled.g,fled.b);
-    hsv_leds[index] = CHSV(fleds[f_index].hue,255,level);
+    CHSV fled = fleds[f_index];
+    leds[index] = CHSV(fled.hue,255,level);
+    hsv_leds[index] = CHSV(fled.hue,255,level);
   }
 }
 
@@ -458,9 +445,8 @@ void color_spectrum_half_wrap_boring() {
           fleds[2*NUM_LEDS - i - 1] = CHSV(number2,255,180); //reduced brightness
         }
         for (int i = 0; i< NUM_LEDS/2; i++){
-          CRGB fledPart = fleds[i];
-          leds0.setPixel(NUM_LEDS/2 - i - 1, fledPart.r, fledPart.g, fledPart.b);
-          leds1.setPixel(NUM_LEDS/2 - i - 1, fledPart.r, fledPart.g, fledPart.b);
+          leds[NUM_LEDS/2 - i - 1] = fleds[i];
+          leds[NUM_LEDS/2 + i] = fleds[i];
         }
       }
 
@@ -471,23 +457,52 @@ void merge_half_wrap_boring() {
         }
       fleds[2*NUM_LEDS - 1] = jawnski;
       for (int i = 0; i< NUM_LEDS/2; i++){
-          CRGB fledPart = fleds[i];
-          leds0.setPixel(NUM_LEDS/2 - i - 1, fledPart.r, fledPart.g, fledPart.b);
-          leds1.setPixel(NUM_LEDS/2 - i - 1, fledPart.r, fledPart.g, fledPart.b);
+          leds[NUM_LEDS/2 - i - 1] = fleds[i];
+          leds[NUM_LEDS/2 + i] = fleds[i];
         }
     }
 
- void color_spread(int startColor) {
-  CRGB colorRef = CHSV(startColor,255,255);
-  for (int i = 0;i < NUM_LEDS; i++){
-    leds0.setPixel(i,colorRef.r,colorRef.g,colorRef.b);
-    leds1.setPixel(i,colorRef.r,colorRef.g,colorRef.b);
+//----------------------------------------------------------------------
+//-------------------------For Beat Detection---------------------------
+//----------------------------------------------------------------------
+float getBassPower(int maxBin){
+  float power = 0;
+  for (int i = 1; i < maxBin + 1; i++){
+    power += pow(fft.read(i),2);
   }
- }
+  return power;
+}
 
+float prevBassPower = 0;
 
+bool beatDetector(){
+  // return true if beat detected
+  float newBassPower = getBassPower(maxBassCutoffBin);
+  if (newBassPower - prevBassPower > beatThreshold){
+    // beat detected!
+    prevBassPower = newBassPower;
+    return true;
+  }
+  else{
+    prevBassPower = newBassPower;
+    return false;
+  }
+}
 
+int beatTimer = 16;
 
+void beatDetectorUpdate(){
+  // already checked if new FFT available
+  if (beatDetector() && beatTimer > 15){
+    fill_solid(leds, NUM_LEDS, CHSV(int(choose_random_color()), 255, 150));
+    beatTimer = 0;
+  }
+  beatTimer += 1;
+}
+
+int choose_random_color(){
+  return (rand() % 256);
+}
 
 //----------------------------------------------------------------------
 //------------------------------For Ripple------------------------------
