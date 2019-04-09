@@ -59,4 +59,3 @@ void getFFT() {
     //TtoTSerial.println(incomingByte, DEC);
   }
 }
-
