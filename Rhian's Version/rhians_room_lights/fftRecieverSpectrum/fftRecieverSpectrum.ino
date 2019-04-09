@@ -1,13 +1,8 @@
-// TO DO:
-// normalize input data so that it interacts identicaly with lights code (>>16)
-// will need to convert data to float first
 
 #include <Audio.h>
 #include <Wire.h>
-
 #include <SPI.h>
 #include <SerialFlash.h>
-
 #include "FastLED.h"
 #include <WS2812Serial.h>
 #include <math.h>
@@ -21,7 +16,7 @@ int old_color;
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 
-float decay = 0.94;
+float decay = 0.96;
 const int colorRange = 80;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
@@ -49,7 +44,7 @@ int genFrequencyHalfBinsHorizontal[HALF_NUM_BINS];
 float genFrequencyHalfLabelsHorizontal[HALF_NUM_BINS];
 float logLevelsEq[HALF_NUM_BINS];
 
-int startTimer = 0;
+//int startTimer = 0;
 int timer = 0;
 int counter = 0;
 
@@ -67,6 +62,7 @@ bool fftDataAvailable = false;
 
 // for timing purposes
 float timeNow= micros();
+float startTimer = millis();
 
 // for accurate data transfer timing
 const int recieverReadyMessage = 0xff;
@@ -74,7 +70,7 @@ const int recieverReadyMessage = 0xff;
 void setup() {
   TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);
-  pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
+  //pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
   //AudioMemory(24); 
   //audioShield.enable();
@@ -92,42 +88,19 @@ void setup() {
   //initialize strip objects
   leds.begin();
   //Serial.println("LED BEGIN");
+  delay(1000);
 }
 
 void loop() {
+  TtoTSerial.write(recieverReadyMessage);
   getFFT();
   color_spectrum_half_wrap(true);
   leds.show();
-  TtoTSerial.write(recieverReadyMessage); 
-}
-
-void getFFT() {
-  int binCount = 0;
-  int byteCount = 0;
-  unsigned int dataInBits = 0;
-  // Receives FFT data over serial from main teensy
-  while (binCount < 512){
-  unsigned int incomingByte;
-  if (TtoTSerial.available() > 0) {
-    //Serial.print("got data");
-    incomingByte = TtoTSerial.read();
-   if (byteCount == 0){
-      //Serial.println("bytecount");
-      dataInBits = incomingByte << 8;
-      byteCount = 1;
-    }
-    else{
-      byteCount = 0;
-      fftData[binCount] = dataInBits + incomingByte;
-      //Serial.println(fftData[binCount]);
-      binCount += 1;
-      dataInBits = 0;
-    }
-  }
-  else {
-      //Serial.print("didn't get data");
-      // keep in while loop until all the data is received
-    }
+  // unnecessary but cool
+  timer = millis();
+  if(timer-startTimer > 100){
+    moving_color_spectrum_half_wrap(1);    //modifies color mapping
+    startTimer = millis();
   }
 }
 
@@ -163,28 +136,6 @@ void writeFrequencyBinsHorizontal(){
   }
 }
 
-//----------------------------------------------------------------------
-//---------------------------FFT Functions------------------------------
-//----------------------------------------------------------------------
-
-float read_fft(unsigned int binFirst, unsigned int binLast) {
-   if (binFirst > binLast) {
-      unsigned int tmp = binLast;
-      binLast = binFirst;
-      binFirst = tmp;
-    }
-    if (binFirst > 511) return 0.0;
-    if (binLast > 511) binLast = 511;
-    uint32_t sum = 0;
-    do {
-      sum += fftData[binFirst++];
-    } while (binFirst <= binLast);
-    return (float)sum * (1.0 / 16384.0);
-  }
-  
-//----------------------------------------------------------------------
-//---------------------------RAINBOW VISUALS----------------------------
-//----------------------------------------------------------------------
 
 //NON REACTIVE----SPECTRUM BUILDERS
 
@@ -218,6 +169,60 @@ void color_spectrum_half_wrap_setup() {
     hsv_leds[HALF_LEDS + i] = fleds[i];
   }
 }
+
+//----------------------------------------------------------------------
+//---------------------------FFT Functions------------------------------
+//----------------------------------------------------------------------
+
+void getFFT() {
+  int binCount = 0;
+  int byteCount = 0;
+  unsigned int dataInBits = 0;
+  // Receives FFT data over serial from main teensy
+  while (binCount < 512){
+  unsigned int incomingByte;
+  if (TtoTSerial.available() > 0) {
+    //Serial.print("got data");
+    incomingByte = TtoTSerial.read();
+   if (byteCount == 0){
+      //Serial.println("bytecount");
+      dataInBits = incomingByte << 8;
+      byteCount = 1;
+    }
+    else{
+      byteCount = 0;
+      fftData[binCount] = dataInBits + incomingByte;
+      //Serial.println(fftData[binCount]);
+      binCount += 1;
+      dataInBits = 0;
+    }
+  }
+  else {
+      //Serial.print("didn't get data");
+      // keep in while loop until all the data is received
+    }
+  }
+}
+
+float read_fft(unsigned int binFirst, unsigned int binLast) {
+   if (binFirst > binLast) {
+      unsigned int tmp = binLast;
+      binLast = binFirst;
+      binFirst = tmp;
+    }
+    if (binFirst > 511) return 0.0;
+    if (binLast > 511) binLast = 511;
+    uint32_t sum = 0;
+    do {
+      sum += fftData[binFirst++];
+    } while (binFirst <= binLast);
+    return (float)sum * (1.0 / 16384.0);
+  }
+  
+//----------------------------------------------------------------------
+//---------------------------RAINBOW VISUALS----------------------------
+//----------------------------------------------------------------------
+
 
 void color_spectrum_half_wrap(bool useEq){
   unsigned int x, freqBin;
@@ -253,7 +258,7 @@ void color_spectrum_half_wrap(bool useEq){
       //uncomment for full spec
       //level = 255;
 
-      if (level>45) {
+      if (level>55) {
           for(int i=0;i<BIN_WIDTH;i++){
             j = right - i - 1;
             k = left + i;

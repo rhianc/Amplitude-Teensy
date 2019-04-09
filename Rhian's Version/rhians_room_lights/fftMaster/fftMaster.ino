@@ -1,5 +1,3 @@
-//Serial LED Light Visualisations
-//Inspired by the LED Audio Spectrum Analyzer Display
 
 #include <Audio.h>
 #include <Wire.h>
@@ -22,6 +20,7 @@ AudioInputAnalog         adc1(AUDIO_INPUT_PIN);
 AudioAnalyzeFFT1024      fft;        
 AudioConnection          patchCord1(audioInput, 0, fft, 0);                 
 AudioControlSGTL5000     audioShield;
+const float auxInputVolume = 0.75;
 
 // for testing purposes
 int startTimer = 0;
@@ -40,19 +39,18 @@ float timeNow= micros();
 int testData = 12345;
 
 // only send data when proper reciever ready message recieved on this end
-bool recieverReadyFlag = true;
+bool recieverReadyFlag = false;
 const int recieverReadyMessage = 0xff;
 
 // Run setup once
 void setup() {
+  TtoTSerial.begin(2000000);  // highest zero-error baud rate, 2000000 (4608000 has theoretical -0.79% error)
+  Serial.begin(2000000);      // high rate PC serial communication
+  
   // Enable the audio shield and set the output volume
-  Serial.begin(2000000);
   audioShield.enable();
   audioShield.inputSelect(myInput);
-  audioShield.volume(1);
-  
-  TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
-  
+  audioShield.volume(auxInputVolume);
   // the audio library needs to be given memory to start working
   AudioMemory(12);
 }
