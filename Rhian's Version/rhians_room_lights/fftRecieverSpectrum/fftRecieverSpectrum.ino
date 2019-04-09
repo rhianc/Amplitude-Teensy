@@ -21,7 +21,7 @@ int old_color;
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 
-float decay = 0.99;
+float decay = 0.94;
 const int colorRange = 80;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
@@ -37,10 +37,10 @@ const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
 //AudioInputI2S       audioInput;
-AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       //xy=99,55
-AudioAnalyzeFFT1024      fft;                         //xy=265,75
-AudioConnection          patchCord1(adc1, fft);
-AudioControlSGTL5000 audioShield;
+//AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       //xy=99,55
+//AudioAnalyzeFFT1024      fft;                         //xy=265,75
+//AudioConnection          patchCord1(adc1, fft);
+//AudioControlSGTL5000     audioShield;
 //empty array for generating 
 int genFrequencyBinsHorizontal[NUM_BINS];
 float genFrequencyLabelsHorizontal[NUM_BINS];
@@ -63,20 +63,20 @@ WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, OUTPUT_PIN, WS2812_GRB
 #define TtoTSerial Serial3
 
 int fftData[512];
+bool fftDataAvailable = false;
 
 void setup() {
   TtoTSerial.begin(2000000); // highest zero-error baud rate
-  Serial.begin(9600);
+  Serial.begin(2000000);
   pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
-  AudioMemory(24); // this is probably why the longer FFT wasn't working, didn't add more memory
-  audioShield.enable();
-  audioShield.inputSelect(myInput);
-  audioShield.volume(0.5);
+  //AudioMemory(24); // this is probably why the longer FFT wasn't working, didn't add more memory
+  //audioShield.enable();
+  //audioShield.inputSelect(myInput);
+  //audioShield.volume(0.5);
   
   writeFrequencyBinsHorizontal();
-  //Serial.begin(9600);
-  Serial.println("INIT");
+  //Serial.println("INIT");
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
   //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
   
@@ -85,59 +85,104 @@ void setup() {
 
   //initialize strip objects
   leds.begin();
-  Serial.println("LED BEGIN");
+  //Serial.println("LED BEGIN");
 }
 
 float timeNow= micros();
+const int recieverReadyMessage = 0xff;
 
 void loop() {
-  getFFT();
+  getFullFFT();
   color_spectrum_half_wrap(true);
   leds.show();
-  // call an update lights function here which will be updated synchronously
-  // with the FFT itself
+  TtoTSerial.write(recieverReadyMessage);
+//  color_spectrum_half_wrap(true);
+//  color_spectrum_half_wrap(true);
+//  color_spectrum_half_wrap(true);
+//  color_spectrum_half_wrap(true);
+//  color_spectrum_half_wrap(true);
+//  color_spectrum_half_wrap(true);
+//  color_spectrum_half_wrap(true);
+  
 }
 
 int binCount = 0;
 int byteCount = 0;
-int dataInBits = 0;
+unsigned int dataInBits = 0;
+
+const int startingTransmissionMessage = 0xff;
+
+void getFullFFT() {
+  int binCount1 = 0;
+  int byteCount1 = 0;
+  unsigned int dataInBits1 = 0;
+  // Receives FFT data over serial from main teensy
+  while (binCount1 < 512){
+  unsigned int incomingByte;
+  if (TtoTSerial.available() > 0) {
+    //Serial.print("got data");
+    incomingByte = TtoTSerial.read();
+   if (byteCount1 == 0){
+      //Serial.println("bytecount");
+      dataInBits1 = incomingByte << 8;
+      byteCount1 = 1;
+    }
+    else{
+      byteCount1 = 0;
+      fftData[binCount1] = dataInBits1 + incomingByte;
+      Serial.println(fftData[binCount1]);
+      binCount1 += 1;
+      dataInBits1 = 0;
+    }
+  }
+  else {
+      //Serial.print("didn't get data");
+      // keep in while loop until all the data is received
+    }
+  }
+}
+
 
 void getFFT() {
   // Receives FFT data over serial from main teensy
-  int incomingByte;
+  unsigned int incomingByte;
   if (TtoTSerial.available() > 0) {
+    //Serial.print("got data");
     incomingByte = TtoTSerial.read();
-    if (byteCount == 0){
+//    if (incomingByte == startingTransmissionMessage){
+//      binCount = 0;
+//      byteCount = 0;
+//    }
+    //Serial.println("read data");
+   if (byteCount == 0){
+      //Serial.println("bytecount");
       dataInBits = incomingByte << 8;
       byteCount = 1;
     }
     else{
       byteCount = 0;
       fftData[binCount] = dataInBits + incomingByte;
-      Serial.print(fftData[binCount]);
-      Serial.print("\n");
+      Serial.println(fftData[binCount]);
       binCount = (binCount + 1) % 512;
       // below section just to test speed
       dataInBits = 0;
-      if (binCount == 511) {
-        float newTime = micros();
-        String difference = String(newTime - timeNow);
-        timeNow = newTime;
-        Serial.print("FFT Received, microseconds elapsed: ");
-        Serial.print(difference);
-        Serial.print("\n");
+     if (binCount == 511) {
+//        float newTime = micros();
+//        String difference = String(newTime - timeNow);
+//        timeNow = newTime;
+//        Serial.print("FFT Received, microseconds elapsed: ");
+//        Serial.print(difference);
+//        Serial.print("\n");
+        fftDataAvailable = true;
       }
     }
-   
-    
-    //Serial.print("UART received: ");
-    //Serial.println(incomingByte, DEC);
-    //TtoTSerial.print("UART received:");
-    //TtoTSerial.println(incomingByte, DEC);
   }
+  else {
+      //Serial.print("didn't get data");
+    }
 }
 
-float read(int binFirst, int binLast){
+float readRhian(int binFirst, int binLast){
   if (binFirst > binLast){
     unsigned int tmp = binLast;
     binLast = binFirst;
@@ -250,10 +295,14 @@ void color_spectrum_half_wrap(bool useEq){
   int right;
   int left;
   freqBin = 0;
+  //Serial.println("loop time");
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
-      
-      level = read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
+      //Serial.println(x);
+      //Serial.println(freqBin);
+      //Serial.println(genFrequencyHalfBinsHorizontal[x] - 1);
+      level = read_fft(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
+      //level = random(1);
        //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
       if(useEq==true){
@@ -331,7 +380,7 @@ void moving_color_spectrum_half_wrap(int delta){
 float getBassPower(int maxBin){
   float power = 0;
   for (int i = 0; i <= maxBin; i++){
-    power += pow(fft.read(i),2);
+    //power += pow(fft.read(i),2);
   }
 //  for (int i = 200; i < 512; i++){
 //    power += pow(fft.read(i),2);

@@ -8,7 +8,7 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
-const int normConstant = 16834 // normalization constant for FFT data
+const int normConstant = 16834; // normalization constant for FFT data
 
 #define TtoTSerial Serial3 // Serial Communication with other teensy
 
@@ -50,7 +50,7 @@ int testData = 12345;
 void setup() {
   // Enable the audio shield and set the output volume
   
-  //Serial.begin(9600);
+  Serial.begin(2000000);
   audioShield.enable();
   audioShield.inputSelect(myInput);
   audioShield.volume(1);
@@ -61,20 +61,42 @@ void setup() {
   AudioMemory(12);
 }
 
+bool recieverReadyFlag = true;
+
 void loop() {
-  if (fft.available()) {
+  if (fft.available() && recieverReadyFlag) {
     //sendTest();
     sendFFT();  // Send all FFT data to other teensy/teensies 
+  }
+  else{
+    listenForRecieverReadyFlag();
+  }
+}
+
+const int recieverReadyMessage = 0xff;
+
+void listenForRecieverReadyFlag(){
+  if (TtoTSerial.available() > 0){
+    byte possibleReadyMessage = TtoTSerial.read();
+    if (possibleReadyMessage == recieverReadyMessage){
+      recieverReadyFlag = true;
+    }
   }
 }
 
 void sendFFT(){
-  for (int x = 0; x < 512; x++){
+  //TtoTSerial.write((byte)(startingTransmissionMessage));
+  for (unsigned int x = 0; x < 512; x++){
     int dataPoint = fft.output[x];
-    //int dataPoint = 0;
-    TtoTSerial.write((byte)((dataPoint&highHex)>>8)); // transit MSBits first, cast to 8bit data
-    TtoTSerial.write((byte)(dataPoint&lowHex));  // transmit LSBits second, cast to 8bit data
-//  }
+    //unsigned int dataPoint = x;
+    byte firstOne = (byte)((dataPoint&highHex)>>8);
+    byte secondOne = (byte)(dataPoint&lowHex);
+    TtoTSerial.write(firstOne); // transit MSBits first, cast to 8bit data
+    TtoTSerial.write(secondOne);  // transmit LSBits second, cast to 8bit data
+    //unsigned int reconstruct = (firstOne << 8) + secondOne;
+    //Serial.println(reconstruct);
+    recieverReadyFlag = false;
+  }
 //  float newTime = micros();
 //  String difference = String(newTime - timeNow);
 //  timeNow = newTime;
