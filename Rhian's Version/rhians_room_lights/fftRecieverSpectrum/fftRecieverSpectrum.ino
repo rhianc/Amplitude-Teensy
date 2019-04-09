@@ -137,6 +137,21 @@ void getFFT() {
   }
 }
 
+float read(int binFirst, int binLast){
+  if (binFirst > binLast){
+    unsigned int tmp = binLast;
+    binLast = binFirst;
+    binFirst = tmp;
+  }
+  if (binFirst > 511) return 0.0;
+  if (binLast > 511) binLast = 511;
+  float sum = 0.0;
+  while (binFirst <= binLast) {
+    sum += fftData[binFirst];
+  }
+  return sum/16384.0;
+}
+
 //-----------------------------------------------------------------------
 //----------------------------SETUP FUNCTIONS----------------------------
 //-----------------------------------------------------------------------
@@ -187,6 +202,7 @@ float read_fft(unsigned int binFirst, unsigned int binLast) {
     } while (binFirst <= binLast);
     return (float)sum * (1.0 / 16384.0);
   }
+  
 //----------------------------------------------------------------------
 //---------------------------RAINBOW VISUALS----------------------------
 //----------------------------------------------------------------------
@@ -237,7 +253,7 @@ void color_spectrum_half_wrap(bool useEq){
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
       
-      level = fft.read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
+      level = read(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
        //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
       if(useEq==true){
