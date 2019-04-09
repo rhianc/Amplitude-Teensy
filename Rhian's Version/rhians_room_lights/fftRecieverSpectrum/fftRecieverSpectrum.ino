@@ -36,8 +36,6 @@ const int OUTPUT_PIN = 5;           // Output pin for neo pixels.
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
-// Audio library objects
-
 //AudioInputI2S       audioInput;
 AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       //xy=99,55
 AudioAnalyzeFFT1024      fft;                         //xy=265,75
