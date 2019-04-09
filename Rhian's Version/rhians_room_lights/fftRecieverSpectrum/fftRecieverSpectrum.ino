@@ -95,15 +95,7 @@ void loop() {
   getFullFFT();
   color_spectrum_half_wrap(true);
   leds.show();
-  TtoTSerial.write(recieverReadyMessage);
-//  color_spectrum_half_wrap(true);
-//  color_spectrum_half_wrap(true);
-//  color_spectrum_half_wrap(true);
-//  color_spectrum_half_wrap(true);
-//  color_spectrum_half_wrap(true);
-//  color_spectrum_half_wrap(true);
-//  color_spectrum_half_wrap(true);
-  
+  TtoTSerial.write(recieverReadyMessage); 
 }
 
 int binCount = 0;
@@ -140,61 +132,6 @@ void getFullFFT() {
       // keep in while loop until all the data is received
     }
   }
-}
-
-
-void getFFT() {
-  // Receives FFT data over serial from main teensy
-  unsigned int incomingByte;
-  if (TtoTSerial.available() > 0) {
-    //Serial.print("got data");
-    incomingByte = TtoTSerial.read();
-//    if (incomingByte == startingTransmissionMessage){
-//      binCount = 0;
-//      byteCount = 0;
-//    }
-    //Serial.println("read data");
-   if (byteCount == 0){
-      //Serial.println("bytecount");
-      dataInBits = incomingByte << 8;
-      byteCount = 1;
-    }
-    else{
-      byteCount = 0;
-      fftData[binCount] = dataInBits + incomingByte;
-      Serial.println(fftData[binCount]);
-      binCount = (binCount + 1) % 512;
-      // below section just to test speed
-      dataInBits = 0;
-     if (binCount == 511) {
-//        float newTime = micros();
-//        String difference = String(newTime - timeNow);
-//        timeNow = newTime;
-//        Serial.print("FFT Received, microseconds elapsed: ");
-//        Serial.print(difference);
-//        Serial.print("\n");
-        fftDataAvailable = true;
-      }
-    }
-  }
-  else {
-      //Serial.print("didn't get data");
-    }
-}
-
-float readRhian(int binFirst, int binLast){
-  if (binFirst > binLast){
-    unsigned int tmp = binLast;
-    binLast = binFirst;
-    binFirst = tmp;
-  }
-  if (binFirst > 511) return 0.0;
-  if (binLast > 511) binLast = 511;
-  float sum = 0.0;
-  while (binFirst <= binLast) {
-    sum += fftData[binFirst];
-  }
-  return sum/16384.0;
 }
 
 //-----------------------------------------------------------------------

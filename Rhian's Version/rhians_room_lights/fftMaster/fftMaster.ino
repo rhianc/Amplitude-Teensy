@@ -8,8 +8,6 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
-const int normConstant = 16834; // normalization constant for FFT data
-
 #define TtoTSerial Serial3 // Serial Communication with other teensy
 
 // Line In
@@ -17,8 +15,6 @@ const int myInput = AUDIO_INPUT_LINEIN;
 
 // PINS!
 const int AUDIO_INPUT_PIN = 14;              // Input ADC pin for audio data.
-const int OUTPUT_PIN_0 = 1;            // First LED Strip
-const int OUTPUT_PIN_1 = 5;            // Second LED Strip
 
 // Audio library objects
 AudioInputI2S            audioInput;         // audio shield: line-in
@@ -30,9 +26,6 @@ AudioControlSGTL5000     audioShield;
 // for testing purposes
 int startTimer = 0;
 int timer = 0;
-
-// for accurate data transfer
-int counter = 0;
 
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -46,10 +39,13 @@ float timeNow= micros();
 
 int testData = 12345;
 
+// only send data when proper reciever ready message recieved on this end
+bool recieverReadyFlag = true;
+const int recieverReadyMessage = 0xff;
+
 // Run setup once
 void setup() {
   // Enable the audio shield and set the output volume
-  
   Serial.begin(2000000);
   audioShield.enable();
   audioShield.inputSelect(myInput);
@@ -61,8 +57,6 @@ void setup() {
   AudioMemory(12);
 }
 
-bool recieverReadyFlag = true;
-
 void loop() {
   if (fft.available() && recieverReadyFlag) {
     //sendTest();
@@ -72,8 +66,6 @@ void loop() {
     listenForRecieverReadyFlag();
   }
 }
-
-const int recieverReadyMessage = 0xff;
 
 void listenForRecieverReadyFlag(){
   if (TtoTSerial.available() > 0){
