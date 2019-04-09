@@ -51,7 +51,7 @@ void setup() {
   audioShield.inputSelect(myInput);
   audioShield.volume(1);
   
-  TtoTSerial.begin(2000000); // highest zero-error baud rate
+  TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   
   // the audio library needs to be given memory to start working
   AudioMemory(12);
@@ -59,32 +59,30 @@ void setup() {
 
 void loop() {
   if (fft.available() && recieverReadyFlag) {
-    //sendTest();
     sendFFT();  // Send all FFT data to other teensy/teensies 
   }
   else{
-    listenForRecieverReadyFlag();
+    listenForRecieverReadyFlag(); // only send if reciever is ready!
   }
 }
 
 void listenForRecieverReadyFlag(){
   if (TtoTSerial.available() > 0){
-    byte possibleReadyMessage = TtoTSerial.read();
-    if (possibleReadyMessage == recieverReadyMessage){
-      recieverReadyFlag = true;
+    byte possibleReadyMessage = TtoTSerial.read();  
+    if (possibleReadyMessage == recieverReadyMessage){    // check if correct message has been recieved
+      recieverReadyFlag = true;                           // now we can send the whole fft at once!
     }
   }
 }
 
 void sendFFT(){
-  //TtoTSerial.write((byte)(startingTransmissionMessage));
   for (unsigned int x = 0; x < 512; x++){
     int dataPoint = fft.output[x];
     //unsigned int dataPoint = x;
     byte firstOne = (byte)((dataPoint&highHex)>>8);
     byte secondOne = (byte)(dataPoint&lowHex);
-    TtoTSerial.write(firstOne); // transit MSBits first, cast to 8bit data
-    TtoTSerial.write(secondOne);  // transmit LSBits second, cast to 8bit data
+    TtoTSerial.write(firstOne);                   // transit MSBits first, cast to 8bit data
+    TtoTSerial.write(secondOne);                  // transmit LSBits second, cast to 8bit data
     //unsigned int reconstruct = (firstOne << 8) + secondOne;
     //Serial.println(reconstruct);
     recieverReadyFlag = false;

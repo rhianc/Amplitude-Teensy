@@ -65,12 +65,18 @@ WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, OUTPUT_PIN, WS2812_GRB
 int fftData[512];
 bool fftDataAvailable = false;
 
+// for timing purposes
+float timeNow= micros();
+
+// for accurate data transfer timing
+const int recieverReadyMessage = 0xff;
+
 void setup() {
-  TtoTSerial.begin(2000000); // highest zero-error baud rate
+  TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);
   pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
-  //AudioMemory(24); // this is probably why the longer FFT wasn't working, didn't add more memory
+  //AudioMemory(24); 
   //audioShield.enable();
   //audioShield.inputSelect(myInput);
   //audioShield.volume(0.5);
@@ -88,43 +94,34 @@ void setup() {
   //Serial.println("LED BEGIN");
 }
 
-float timeNow= micros();
-const int recieverReadyMessage = 0xff;
-
 void loop() {
-  getFullFFT();
+  getFFT();
   color_spectrum_half_wrap(true);
   leds.show();
   TtoTSerial.write(recieverReadyMessage); 
 }
 
-int binCount = 0;
-int byteCount = 0;
-unsigned int dataInBits = 0;
-
-const int startingTransmissionMessage = 0xff;
-
-void getFullFFT() {
-  int binCount1 = 0;
-  int byteCount1 = 0;
-  unsigned int dataInBits1 = 0;
+void getFFT() {
+  int binCount = 0;
+  int byteCount = 0;
+  unsigned int dataInBits = 0;
   // Receives FFT data over serial from main teensy
-  while (binCount1 < 512){
+  while (binCount < 512){
   unsigned int incomingByte;
   if (TtoTSerial.available() > 0) {
     //Serial.print("got data");
     incomingByte = TtoTSerial.read();
-   if (byteCount1 == 0){
+   if (byteCount == 0){
       //Serial.println("bytecount");
-      dataInBits1 = incomingByte << 8;
-      byteCount1 = 1;
+      dataInBits = incomingByte << 8;
+      byteCount = 1;
     }
     else{
-      byteCount1 = 0;
-      fftData[binCount1] = dataInBits1 + incomingByte;
-      Serial.println(fftData[binCount1]);
-      binCount1 += 1;
-      dataInBits1 = 0;
+      byteCount = 0;
+      fftData[binCount] = dataInBits + incomingByte;
+      //Serial.println(fftData[binCount]);
+      binCount += 1;
+      dataInBits = 0;
     }
   }
   else {
