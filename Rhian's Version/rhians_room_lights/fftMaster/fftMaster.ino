@@ -6,7 +6,7 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
-#define TtoTSerial Serial3 // Serial Communication with other teensy
+#define TtoTSerial Serial1 // Serial Communication with other teensy
 
 // Line In
 const int myInput = AUDIO_INPUT_LINEIN;
@@ -44,8 +44,11 @@ const int recieverReadyMessage = 0xff;
 
 // Run setup once
 void setup() {
+  TtoTSerial.setTX(1);
+  TtoTSerial.setRX(0);
   TtoTSerial.begin(2000000);  // highest zero-error baud rate, 2000000 (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);      // high rate PC serial communication
+  Serial.println("serial port open");
   
   // Enable the audio shield and set the output volume
   audioShield.enable();
@@ -81,8 +84,8 @@ void sendFFT(){
     byte secondOne = (byte)(dataPoint&lowHex);
     TtoTSerial.write(firstOne);                   // transit MSBits first, cast to 8bit data
     TtoTSerial.write(secondOne);                  // transmit LSBits second, cast to 8bit data
-    //unsigned int reconstruct = (firstOne << 8) + secondOne;
-    //Serial.println(reconstruct);
+    unsigned int reconstruct = (firstOne << 8) + secondOne;
+    Serial.println(reconstruct);
     recieverReadyFlag = false;
   }
 //  float newTime = micros();

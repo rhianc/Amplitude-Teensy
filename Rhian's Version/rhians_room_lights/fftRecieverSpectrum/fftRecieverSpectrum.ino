@@ -4,14 +4,25 @@
 #include <SPI.h>
 #include <SerialFlash.h>
 #include "FastLED.h"
-#include <WS2812Serial.h>
+//#include <WS2812Serial.h>
 #include <math.h>
 
-#define NUM_LEDS 300 // per strip
+// Important Constants
+#define NUM_LEDS 150 // per strip
 #define BIN_WIDTH 1 // lights with the same frequency assignment
+
+//changes for OctoWS2811 Library
+/////////////////////////////////// 
+#include <OctoWS2811.h>
+DMAMEM int displayMemory[NUM_LEDS*6];
+int drawingMemory[NUM_LEDS*6];
+const int config = WS2811_GRB | WS2811_800kHz;
+OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
+///////////////////////////////////
 
 float beat_threshold = 1;
 int old_color;
+
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
@@ -48,14 +59,15 @@ float logLevelsEq[HALF_NUM_BINS];
 int timer = 0;
 int counter = 0;
 
-byte drawingMemory[NUM_LEDS*3];         //  3 bytes per LED
-DMAMEM byte displayMemory[NUM_LEDS*12]; // 12 bytes per LED
+//byte drawingMemory[NUM_LEDS*3];         //  3 bytes per LED
+//DMAMEM byte displayMemory[NUM_LEDS*12]; // 12 bytes per LED
 
 int BUTTON_PIN = 33;
 int BUTT_TIME = 0;
 const int myInput = AUDIO_INPUT_LINEIN;
-WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, OUTPUT_PIN, WS2812_GRB);
-#define TtoTSerial Serial3
+//WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, OUTPUT_PIN, WS2812_GRB);
+
+#define TtoTSerial Serial1
 
 int fftData[512];
 bool fftDataAvailable = false;
@@ -68,6 +80,8 @@ float startTimer = millis();
 const int recieverReadyMessage = 0xff;
 
 void setup() {
+  TtoTSerial.setTX(1);
+  TtoTSerial.setRX(0);
   TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);
   //pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
@@ -147,7 +161,7 @@ void color_spectrum_setup(int colorRange, int startColor) {
     float number2 = floor(number1);
     CHSV fled = CHSV((number2 + startColor),255,255);
     CRGB led = fled;
-    leds.setPixel(i,led.r,led.g,led.b);
+    allLedsSetPixel(i,led.r,led.g,led.b);
     hsv_leds[i] = fled;
   }
 }
@@ -163,8 +177,8 @@ void color_spectrum_half_wrap_setup() {
   }
   for (int i = 0; i< HALF_LEDS; i++){
     CRGB fled = fleds[i];
-    leds.setPixel(HALF_LEDS - i - 1,fled.r,fled.g,fled.b);
-    leds.setPixel(HALF_LEDS + i,fled.r,fled.g,fled.b);
+    allLedsSetPixel(HALF_LEDS - i - 1,fled.r,fled.g,fled.b);
+    allLedsSetPixel(HALF_LEDS + i,fled.r,fled.g,fled.b);
     hsv_leds[HALF_LEDS - i - 1] = fleds[i];
     hsv_leds[HALF_LEDS + i] = fleds[i];
   }
@@ -192,7 +206,7 @@ void getFFT() {
     else{
       byteCount = 0;
       fftData[binCount] = dataInBits + incomingByte;
-      //Serial.println(fftData[binCount]);
+      Serial.println(fftData[binCount]);
       binCount += 1;
       dataInBits = 0;
     }
@@ -292,12 +306,12 @@ void color_spectrum_half_wrap_update(int index, float level) {
   }else if(index >= HALF_LEDS){
     int f_index = index - HALF_LEDS;
     CRGB fled = CHSV(fleds[f_index].hue,255,level);
-    leds.setPixel(index,fled.r,fled.g,fled.b);
+    allLedsSetPixel(index,fled.r,fled.g,fled.b);
     hsv_leds[index] = CHSV(fleds[f_index].hue,255,level);
   }else{
     int f_index = abs(index - HALF_LEDS +1);
     CRGB fled = CHSV(fleds[f_index].hue,255,level);
-    leds.setPixel(index,fled.r,fled.g,fled.b);
+    allLedsSetPixel(index,fled.r,fled.g,fled.b);
     hsv_leds[index] = CHSV(fleds[f_index].hue,255,level);
   }
 }
@@ -365,7 +379,7 @@ void color_spread(int startColor) {
   CRGB colorRef = CHSV(startColor,255,255);
   for (int i = 0;i < NUM_LEDS; i++){
 //    Serial.println(i);
-    leds.setPixel(i,colorRef.r,colorRef.g,colorRef.b);
+    allLedsSetPixel(i,colorRef.r,colorRef.g,colorRef.b);
   }
 }
 
@@ -378,3 +392,19 @@ int choose_random_color(int old_c){
     return new_color;
   }
 }
+
+///////////////////////////////
+////CONTROL ALL 8 STRIPS///////
+///////////////////////////////
+void allLedsSetPixel(int i, CRGB color) {
+  for (int x = 0; x < 8; x++){
+    leds.setPixel(x*NUM_LEDS+i, color);
+  }
+}
+
+void allLedsSetPixel(int i, int r, int g, int b) {
+  for (int x = 0; x < 8; x++){
+    leds.setPixel(x*NUM_LEDS+i, r, g, b);
+  }
+}
+
