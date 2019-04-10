@@ -20,6 +20,8 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
+int slaveNum = 1;
+
 float beat_threshold = 1;
 int old_color;
 
@@ -102,12 +104,30 @@ void setup() {
   //initialize strip objects
   leds.begin();
   //Serial.println("LED BEGIN");
+
+  // assign digital IO pins for inter-teensy communication
+  switch (slaveNum){
+    case 3:
+    // send ready signal to teensy 2 using pin 3
+    pinMode(3, OUTPUT);
+      break;
+    case 2:
+    // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+    pinMode(3, INPUT);
+    pinMode(4, OUTPUT);
+      break;
+    default:
+    // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+    pinMode(4, INPUT);
+  }
   delay(1000);
 }
 
 void loop() {
-  TtoTSerial.write(recieverReadyMessage);
+  //TtoTSerial.write(recieverReadyMessage);
+  sendReadyMessage(slaveNum);
   getFFT();
+  turnOffReadyMessage(slaveNum);
   color_spectrum_half_wrap(true);
   leds.show();
   // unnecessary but cool
@@ -115,6 +135,42 @@ void loop() {
   if(timer-startTimer > 100){
     moving_color_spectrum_half_wrap(1);    //modifies color mapping
     startTimer = millis();
+  }
+}
+
+void sendReadyMessage(int slaveNumber){
+  switch (slaveNumber){
+    case 3:
+    // send ready signal to teensy 2 using pin 3
+    digitalWrite(3, HIGH);
+      break;
+    case 2:
+    // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+    if (digitalRead(3) == HIGH){
+      digitalWrite(4, HIGH);
+    }
+      break;
+    default:
+    // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+    if (digitalRead(4) == HIGH){
+      TtoTSerial.write(recieverReadyMessage);
+    }
+  }
+}
+
+void turnOffReadyMessage(int slaveNumber){
+  switch (slaveNumber){
+    case 3:
+    // send ready signal to teensy 2 using pin 3
+    digitalWrite(3, LOW);
+      break;
+    case 2:
+    // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+    digitalWrite(4, LOW);
+      break;
+    default:
+    // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+    // don't need to "not ready" message
   }
 }
 
