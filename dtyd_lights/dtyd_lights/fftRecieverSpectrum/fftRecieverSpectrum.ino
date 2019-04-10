@@ -20,7 +20,7 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
-int slaveNum = 1;
+int slaveNum = 2; // only 1 communicates with master, 3->2->1->Master (ready for FFT message)
 
 float beat_threshold = 1;
 int old_color;
@@ -139,38 +139,38 @@ void loop() {
 }
 
 void sendReadyMessage(int slaveNumber){
-  switch (slaveNumber){
+  switch (slaveNumber) {
     case 3:
-    // send ready signal to teensy 2 using pin 3
-    digitalWrite(3, HIGH);
+      // send ready signal to teensy 2 using pin 3
+      digitalWrite(3, HIGH);
       break;
     case 2:
-    // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-    if (digitalRead(3) == HIGH){
-      digitalWrite(4, HIGH);
-    }
+      // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+      if (digitalRead(3) == HIGH){
+        digitalWrite(4, HIGH);
+      }
       break;
     default:
-    // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
-    if (digitalRead(4) == HIGH){
-      TtoTSerial.write(recieverReadyMessage);
-    }
+      // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+      if (digitalRead(4) == HIGH){
+        TtoTSerial.write(recieverReadyMessage);
+      }
   }
 }
 
 void turnOffReadyMessage(int slaveNumber){
-  switch (slaveNumber){
+  switch (slaveNumber) {
     case 3:
-    // send ready signal to teensy 2 using pin 3
-    digitalWrite(3, LOW);
+      // send ready signal to teensy 2 using pin 3
+      digitalWrite(3, LOW);
       break;
     case 2:
-    // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-    digitalWrite(4, LOW);
+      // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+      digitalWrite(4, LOW);
       break;
     default:
-    // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
-    // don't need to "not ready" message
+      // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+      int c = 0;
   }
 }
 
