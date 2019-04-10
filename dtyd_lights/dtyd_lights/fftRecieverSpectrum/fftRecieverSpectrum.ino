@@ -20,14 +20,14 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
-float beat_threshold = 1;
+float beat_threshold = .985;
 int old_color;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 
-float decay = 0.96;
+float decay = 0.9;
 const int colorRange = 80;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
@@ -78,6 +78,7 @@ float startTimer = millis();
 
 // for accurate data transfer timing
 const int recieverReadyMessage = 0xff;
+bool beatDetected;
 
 void setup() {
   TtoTSerial.setTX(1);
@@ -109,6 +110,7 @@ void loop() {
   TtoTSerial.write(recieverReadyMessage);
   getFFT();
   color_spectrum_half_wrap(true);
+  beatDetectorUpdate();
   leds.show();
   // unnecessary but cool
   timer = millis();
@@ -317,6 +319,10 @@ void color_spectrum_half_wrap_update(int index, float level) {
 }
 
 void moving_color_spectrum_half_wrap(int delta){
+  if(beatDetected){
+    delta = 60;
+    beatDetected = false;
+  }
   //CHSV fled = fleds[0];
   for(int i=0;i<(NUM_FLEDS);i++){
     CHSV fledx = fleds[i];
@@ -330,13 +336,14 @@ void moving_color_spectrum_half_wrap(int delta){
 //----------------------------------------------------------------------
 //-------------------------For Beat Detection---------------------------
 //----------------------------------------------------------------------
+
 float getBassPower(int maxBin){
   float power = 0;
   for (int i = 0; i <= maxBin; i++){
-    //power += pow(fft.read(i),2);
+    power += pow(read_fft(0,i),2);
   }
 //  for (int i = 200; i < 512; i++){
-//    power += pow(fft.read(i),2);
+//    power += pow(read_fft(i,i+1),2);
 //  }
   //Serial.println(power);
   return power;
@@ -346,10 +353,12 @@ float prevBassPower = 0;
 
 bool beatDetector(){
   // return true if beat detected
-  float newBassPower = getBassPower(1);
-  //Serial.println(newBassPower-prevBassPower); 
+  float newBassPower = getBassPower(10);
+  Serial.println("beatDetector");
+  Serial.println(newBassPower-prevBassPower);  
   if ((newBassPower - prevBassPower) > beat_threshold){
     // beat detected!
+    Serial.println("beat detected");
     prevBassPower = newBassPower;
     return true;
   }
@@ -366,32 +375,33 @@ void beatDetectorUpdate(){
   // already checked if new FFT available
   
   if (beatDetector() && beatTimer > 15){
-//    int new_color = choose_random_color(old_color);
-//    color_spread(new_color);
-//    old_color = new_color;
-    moving_color_spectrum_half_wrap(33);
+    Serial.println("wow");
+    beatDetected = true;
+    //int new_color = choose_random_color(old_color);
+    //color_spread(new_color);
+    //old_color = new_color;
     beatTimer = 0;
   }
   beatTimer += 1;
 }
 
-void color_spread(int startColor) {
-  CRGB colorRef = CHSV(startColor,255,255);
-  for (int i = 0;i < NUM_LEDS; i++){
-//    Serial.println(i);
-    allLedsSetPixel(i,colorRef.r,colorRef.g,colorRef.b);
-  }
-}
-
-int choose_random_color(int old_c){
-  int new_color = rand() % (255 + 1 - 0) + 0;
-  if (abs(new_color-old_c) < 70){
-    return choose_random_color(old_c);
-  }
-  else{
-    return new_color;
-  }
-}
+//void color_spread(int startColor) {
+//  CRGB colorRef = CHSV(startColor,255,255);
+//  for (int i = 0;i < NUM_LEDS; i++){
+////    Serial.println(i);
+//      allLedsSetPixel(i,colorRef.r,colorRef.g,colorRef.b);
+//  }
+//}
+//
+//int choose_random_color(int old_c){
+//  int new_color = rand() % (255 + 1 - 0) + 0;
+//  if (abs(new_color-old_c) < 70){
+//    return choose_random_color(old_c);
+//  }
+//  else{
+//    return new_color;
+//  }
+//}
 
 ///////////////////////////////
 ////CONTROL ALL 8 STRIPS///////
@@ -404,7 +414,27 @@ void allLedsSetPixel(int i, CRGB color) {
 
 void allLedsSetPixel(int i, int r, int g, int b) {
   for (int x = 0; x < 8; x++){
-    leds.setPixel(x*NUM_LEDS+i, r, g, b);
+    float red;
+    float green;
+    float blue;
+    bool pureC = true;
+    red = r*(1-x*(1./8));
+    green = g*(1-x*(1./8));
+    blue  = b*(1-x*(1./8));
+
+    float colors[3] = {red, green, blue};
+
+    if((r>0&&g>0)||(r>0&&b>0)||(b>0&&g>0)){
+      pureC = false;
+    }
+    
+    if(((colors[0]<20)||(colors[1]<20)||(colors[2]<20)) && (pureC == false)){
+      for(int c;c<3;c++){
+        colors[c] = 0;
+      }
+    }
+        
+    
+    leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
   }
 }
-
