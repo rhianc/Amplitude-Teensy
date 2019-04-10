@@ -20,6 +20,8 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
+int slaveNum = 2; // only 1 communicates with master, 3->2->1->Master (ready for FFT message)
+
 float beat_threshold = .985;
 int old_color;
 
@@ -103,12 +105,31 @@ void setup() {
   //initialize strip objects
   leds.begin();
   //Serial.println("LED BEGIN");
+
+  // assign digital IO pins for inter-teensy communication
+  switch (slaveNum){
+    case 3:
+    // send ready signal to teensy 2 using pin 3
+    pinMode(3, OUTPUT);
+      break;
+    case 2:
+    // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+    pinMode(3, INPUT);
+    pinMode(4, OUTPUT);
+      break;
+    default:
+    // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+    pinMode(4, INPUT);
+  }
+  
   delay(1000);
+  Serial.println("serial working properly");
 }
 
 void loop() {
-  TtoTSerial.write(recieverReadyMessage);
+  sendReadyMessage(slaveNum);
   getFFT();
+  turnOffReadyMessage(slaveNum);
   color_spectrum_half_wrap(true);
   beatDetectorUpdate();
   leds.show();
@@ -117,6 +138,47 @@ void loop() {
   if(timer-startTimer > 100){
     moving_color_spectrum_half_wrap(1);    //modifies color mapping
     startTimer = millis();
+  }
+}
+
+void sendReadyMessage(int slaveNumber){
+  switch (slaveNumber) {
+    case 3:
+      // send ready signal to teensy 2 using pin 3
+      digitalWrite(3, HIGH);
+      break;
+    case 2:
+      // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+      digitalWrite(4, HIGH);                /// COMMENT ONCE THIRD TEENSY ADDED
+      //if (digitalRead(3) == HIGH){        /// UNCOMMENT ONCE THIRD TEENSY ADDED
+      //  digitalWrite(4, HIGH);
+      //}
+      break;
+    default:
+      // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+      while (digitalRead(4) == LOW){
+        // do nothing
+      }
+      if (digitalRead(4) == HIGH){
+        Serial.println("sending ready for fft message");
+        TtoTSerial.write(recieverReadyMessage);
+      }
+  }
+}
+
+void turnOffReadyMessage(int slaveNumber){
+  switch (slaveNumber) {
+    case 3:
+      // send ready signal to teensy 2 using pin 3
+      digitalWrite(3, LOW);
+      break;
+    case 2:
+      // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
+      digitalWrite(4, LOW);
+      break;
+    default:
+      // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
+      int c = 0;
   }
 }
 
@@ -208,7 +270,7 @@ void getFFT() {
     else{
       byteCount = 0;
       fftData[binCount] = dataInBits + incomingByte;
-      Serial.println(fftData[binCount]);
+      //Serial.println(fftData[binCount]);
       binCount += 1;
       dataInBits = 0;
     }
@@ -375,7 +437,7 @@ void beatDetectorUpdate(){
   // already checked if new FFT available
   
   if (beatDetector() && beatTimer > 15){
-    Serial.println("wow");
+    //Serial.println("wow");
     beatDetected = true;
     //int new_color = choose_random_color(old_color);
     //color_spread(new_color);
