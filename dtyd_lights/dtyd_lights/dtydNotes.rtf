@@ -1,0 +1,31 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1671\cocoasubrtf200
+{\fonttbl\f0\fnil\fcharset0 HelveticaNeue;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;}
+{\*\expandedcolortbl;;\cssrgb\c0\c0\c0;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\deftab720
+\pard\pardeftab720\sl280\partightenfactor0
+
+\f0\fs24 \cf2 \expnd0\expndtw0\kerning0
+AudioShield Pins used:\'a09, 11, 13, 15, 18, 19, 22, 23\
+DON'T TOUCH SERIAL 2\
+\
+OctoWS2811 Pins used: 2, 14, 7, 8 , 6, 20, 21, 5\
+OctoWS2811 Pins reserved: 29, 30\'a0\
+DON'T TOUCH SERIAL 3\
+\
+Master to all Slaves on Serial 1: 0 (receive), 1 (transmit)\'a0\
+\
+***\
+OctoWS2811 is designed to drive 8 LED strips of equal length. LEDs on the first strip are numbered starting at zero.\'a0The second strip begins at the strip length and goes to strip length minus 1, and so on for each strip. ORDER OF STRIPS ABOVE\
+\
+***\
+\
+Slave to Slave on digital I/O, when all are ready then send FFT again\
+\
+Have each slave be labeled as [1,2,3],\
+\
+only 1 communicates with master, 3->2->1->Master (ready for FFT message)\
+\
+use digital data pins 3 and 4 for inter teensy coms\
+}
