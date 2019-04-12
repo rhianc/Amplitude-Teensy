@@ -8,8 +8,8 @@
 #include <math.h>
 
 // Important Constants
-#define NUM_LEDS 150 // per strip
-#define BIN_WIDTH 1 // lights with the same frequency assignment
+#define NUM_LEDS 150          // LEDs per strip
+#define BIN_WIDTH 1           // lights with the same frequency assignment
 
 //changes for OctoWS2811 Library
 /////////////////////////////////// 
@@ -20,16 +20,16 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
-int slaveNum = 2; // only 1 communicates with master, 3->2->1->Master (ready for FFT message)
+int slaveNum = 2;              //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
 
-float beat_threshold = .985;
+float beat_threshold = .98;
 int old_color;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 
-float decay = 0.9;
+float decay = 0.95;
 const int colorRange = 80;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
@@ -149,10 +149,12 @@ void sendReadyMessage(int slaveNumber){
       break;
     case 2:
       // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-      digitalWrite(4, HIGH);                /// COMMENT ONCE THIRD TEENSY ADDED
-      //if (digitalRead(3) == HIGH){        /// UNCOMMENT ONCE THIRD TEENSY ADDED
-      //  digitalWrite(4, HIGH);
-      //}
+      while (digitalRead(3) == LOW){
+        // do nothing
+      }        
+      if (digitalRead(3) == HIGH){       
+        digitalWrite(4, HIGH);
+      }
       break;
     default:
       // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
@@ -258,24 +260,24 @@ void getFFT() {
   unsigned int dataInBits = 0;
   // Receives FFT data over serial from main teensy
   while (binCount < 512){
-  unsigned int incomingByte;
-  if (TtoTSerial.available() > 0) {
+    unsigned int incomingByte;
+    if (TtoTSerial.available() > 0) {
     //Serial.print("got data");
     incomingByte = TtoTSerial.read();
-   if (byteCount == 0){
-      //Serial.println("bytecount");
-      dataInBits = incomingByte << 8;
-      byteCount = 1;
+      if (byteCount == 0){
+        //Serial.println("bytecount");
+        dataInBits = incomingByte << 8;
+        byteCount = 1;
+      }
+      else{
+        byteCount = 0;
+        fftData[binCount] = dataInBits + incomingByte;
+        //Serial.println(fftData[binCount]);
+        binCount += 1;
+        dataInBits = 0;
+      }
     }
-    else{
-      byteCount = 0;
-      fftData[binCount] = dataInBits + incomingByte;
-      //Serial.println(fftData[binCount]);
-      binCount += 1;
-      dataInBits = 0;
-    }
-  }
-  else {
+    else {
       //Serial.print("didn't get data");
       // keep in while loop until all the data is received
     }
@@ -480,9 +482,9 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     float green;
     float blue;
     bool pureC = true;
-    red = r*(1-x*(1./8));
-    green = g*(1-x*(1./8));
-    blue  = b*(1-x*(1./8));
+    red = r*(1-x*(1./7.5));
+    green = g*(1-x*(1./7.5));
+    blue  = b*(1-x*(1./7.5));
 
     float colors[3] = {red, green, blue};
 
@@ -494,9 +496,7 @@ void allLedsSetPixel(int i, int r, int g, int b) {
       for(int c;c<3;c++){
         colors[c] = 0;
       }
-    }
-        
-    
+    }   
     leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
   }
 }
