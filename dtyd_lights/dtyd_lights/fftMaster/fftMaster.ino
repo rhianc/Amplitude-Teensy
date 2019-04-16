@@ -69,6 +69,7 @@ void loop() {
 
 void listenForRecieverReadyFlag(){
   if (TtoTSerial.available() > 0){
+    Serial.println("should be sending FFT");
     byte possibleReadyMessage = TtoTSerial.read();  
     if (possibleReadyMessage == recieverReadyMessage){    // check if correct message has been recieved
       recieverReadyFlag = true;                           // now we can send the whole fft at once!

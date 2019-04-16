@@ -11,7 +11,7 @@
 #define NUM_LEDS 150          // LEDs per strip
 #define BIN_WIDTH 1           // lights with the same frequency assignment
 
-//changes for OctoWS2811 Library
+//changes for OctoWS2811 Library   
 /////////////////////////////////// 
 #include <OctoWS2811.h>
 DMAMEM int displayMemory[NUM_LEDS*6];
@@ -20,7 +20,7 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
-int slaveNum = 2;              //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
+int slaveNum = 3;              //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
 
 float beat_threshold = .98;
 int old_color;
@@ -83,17 +83,18 @@ const int recieverReadyMessage = 0xff;
 bool beatDetected;
 
 void setup() {
+  
   TtoTSerial.setTX(1);
   TtoTSerial.setRX(0);
   TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);
+  Serial.println("beginning");
   //pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
   // the audio library needs to be given memory to start working
   //AudioMemory(24); 
   //audioShield.enable();
   //audioShield.inputSelect(myInput);
   //audioShield.volume(0.5);
-  
   writeFrequencyBinsHorizontal();
   //Serial.println("INIT");
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
@@ -146,15 +147,17 @@ void sendReadyMessage(int slaveNumber){
     case 3:
       // send ready signal to teensy 2 using pin 3
       digitalWrite(3, HIGH);
+      Serial.println("sending ready for fft message 3");
       break;
     case 2:
       // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-      while (digitalRead(3) == LOW){
+      //while (digitalRead(3) == LOW){
         // do nothing
-      }        
-      if (digitalRead(3) == HIGH){       
+      //}        
+      //if (digitalRead(3) == HIGH){       
         digitalWrite(4, HIGH);
-      }
+        Serial.println("sending ready for fft message 2");
+      //}
       break;
     default:
       // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
@@ -162,7 +165,7 @@ void sendReadyMessage(int slaveNumber){
         // do nothing
       }
       if (digitalRead(4) == HIGH){
-        Serial.println("sending ready for fft message");
+        Serial.println("sending ready for fft message 1");
         TtoTSerial.write(recieverReadyMessage);
       }
   }
@@ -262,7 +265,7 @@ void getFFT() {
   while (binCount < 512){
     unsigned int incomingByte;
     if (TtoTSerial.available() > 0) {
-    //Serial.print("got data");
+    Serial.print("got data");
     incomingByte = TtoTSerial.read();
       if (byteCount == 0){
         //Serial.println("bytecount");
@@ -330,7 +333,7 @@ void color_spectrum_half_wrap(bool useEq){
       if(level>255){
         level =255;
       }
-      //Serial.println(level);
+      Serial.println(level);
       right = (HALF_NUM_BINS - x)*BIN_WIDTH;
       left = (HALF_NUM_BINS + x)*BIN_WIDTH;
       // uncomment to see the spectrum in Arduino's Serial Monitor
@@ -438,7 +441,7 @@ int beatTimer = 16;
 void beatDetectorUpdate(){
   // already checked if new FFT available
   
-  if (beatDetector() && beatTimer > 15){
+  if (beatDetector() && beatTimer > 11){
     //Serial.println("wow");
     beatDetected = true;
     //int new_color = choose_random_color(old_color);
@@ -482,9 +485,16 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     float green;
     float blue;
     bool pureC = true;
-    red = r*(1-x*(1./7.5));
-    green = g*(1-x*(1./7.5));
-    blue  = b*(1-x*(1./7.5));
+    if((slaveNum == 1) || (slaveNum == 2)){
+      red = r*(1-x*(1./11.5));
+      green = g*(1-x*(1./11.5));
+      blue  = b*(1-x*(1./11.5));
+    }
+    else{
+      r*(1-((8*(1./11.5)) +((x%4)*(1./11.5))));
+      g*(1-((8*(1./11.5)) +((x%4)*(1./11.5))));
+      b*(1-((8*(1./11.5)) +((x%4)*(1./11.5))));
+    }
 
     float colors[3] = {red, green, blue};
 
