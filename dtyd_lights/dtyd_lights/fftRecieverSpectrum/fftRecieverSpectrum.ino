@@ -20,17 +20,17 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
-int slaveNum = 3;              //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
+int slaveNum = 1;              //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
 
-float beat_threshold = .98;
+float beat_threshold = .96;
 int old_color;
 
 // VARIABLES FROM BEFORE
 const unsigned int max_height = 255;
 const float maxLevel = 0.5;      // 1.0 = max, lower is more "sensitive"
 
-float decay = 0.95;
-const int colorRange = 80;
+float decay = 0.96;
+const int colorRange = 85;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
 const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
@@ -115,8 +115,8 @@ void setup() {
       break;
     case 2:
     // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-    pinMode(3, INPUT);
-    pinMode(4, OUTPUT);
+    pinMode(4, INPUT);
+    pinMode(3, OUTPUT);
       break;
     default:
     // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
@@ -147,7 +147,7 @@ void sendReadyMessage(int slaveNumber){
     case 3:
       // send ready signal to teensy 2 using pin 3
       digitalWrite(3, HIGH);
-      Serial.println("sending ready for fft message 3");
+      //Serial.println("sending ready for fft message 3");
       break;
     case 2:
       // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
@@ -155,8 +155,8 @@ void sendReadyMessage(int slaveNumber){
         // do nothing
       //}        
       //if (digitalRead(3) == HIGH){       
-        digitalWrite(4, HIGH);
-        Serial.println("sending ready for fft message 2");
+        digitalWrite(3, HIGH);
+        //Serial.println("sending ready for fft message 2");
       //}
       break;
     default:
@@ -165,7 +165,7 @@ void sendReadyMessage(int slaveNumber){
         // do nothing
       }
       if (digitalRead(4) == HIGH){
-        Serial.println("sending ready for fft message 1");
+        //Serial.println("sending ready for fft message 1");
         TtoTSerial.write(recieverReadyMessage);
       }
   }
@@ -179,7 +179,7 @@ void turnOffReadyMessage(int slaveNumber){
       break;
     case 2:
       // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-      digitalWrite(4, LOW);
+      digitalWrite(3, LOW);
       break;
     default:
       // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
@@ -265,7 +265,7 @@ void getFFT() {
   while (binCount < 512){
     unsigned int incomingByte;
     if (TtoTSerial.available() > 0) {
-    Serial.print("got data");
+    //Serial.print("got data");
     incomingByte = TtoTSerial.read();
       if (byteCount == 0){
         //Serial.println("bytecount");
@@ -328,12 +328,12 @@ void color_spectrum_half_wrap(bool useEq){
        //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
       if(useEq==true){
-        level = (level*logLevelsEq[x]*255)*(15); 
+        level = (level*logLevelsEq[x]*255)*(10); 
       }
       if(level>255){
         level =255;
       }
-      Serial.println(level);
+      //Serial.println(level);
       right = (HALF_NUM_BINS - x)*BIN_WIDTH;
       left = (HALF_NUM_BINS + x)*BIN_WIDTH;
       // uncomment to see the spectrum in Arduino's Serial Monitor
@@ -421,11 +421,11 @@ float prevBassPower = 0;
 bool beatDetector(){
   // return true if beat detected
   float newBassPower = getBassPower(10);
-  Serial.println("beatDetector");
-  Serial.println(newBassPower-prevBassPower);  
+  //Serial.println("beatDetector");
+  //Serial.println(newBassPower-prevBassPower);  
   if ((newBassPower - prevBassPower) > beat_threshold){
     // beat detected!
-    Serial.println("beat detected");
+    //Serial.println("beat detected");
     prevBassPower = newBassPower;
     return true;
   }
@@ -486,14 +486,14 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     float blue;
     bool pureC = true;
     if((slaveNum == 1) || (slaveNum == 2)){
-      red = r*(1-x*(1./11.5));
-      green = g*(1-x*(1./11.5));
-      blue  = b*(1-x*(1./11.5));
+      red = r*(1-x*(1./11.1));
+      green = g*(1-x*(1./11.1));
+      blue  = b*(1-x*(1./11.1));
     }
     else{
-      r*(1-((8*(1./11.5)) +((x%4)*(1./11.5))));
-      g*(1-((8*(1./11.5)) +((x%4)*(1./11.5))));
-      b*(1-((8*(1./11.5)) +((x%4)*(1./11.5))));
+      red = r*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+      green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+      blue = b*(1-((8*(1./12)) +((x%4)*(1./11.1))));
     }
 
     float colors[3] = {red, green, blue};
