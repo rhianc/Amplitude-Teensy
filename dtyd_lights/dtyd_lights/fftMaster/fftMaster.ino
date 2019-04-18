@@ -27,10 +27,11 @@ const float auxInputVolume = 0.75;
 
 AudioInputI2S            i2s2;           //xy=55,496
 AudioMixer4              mixer;         //xy=194,505
-AudioAnalyzeFFT1024      fft1024_1;      //xy=328,490
+AudioAnalyzeFFT1024      fft;      //xy=328,490
 AudioConnection          patchCord1(i2s2, 0, mixer, 0);
 AudioConnection          patchCord2(i2s2, 1, mixer, 1);
-AudioConnection          patchCord3(mixer, fft1024_1);
+AudioConnection          patchCord3(mixer, fft);
+AudioControlSGTL5000     audioShield;
 
 
 // for testing purposes
@@ -66,7 +67,7 @@ void setup() {
   audioShield.inputSelect(myInput);
   audioShield.volume(auxInputVolume);
   // the audio library needs to be given memory to start working
-  AudioMemory(24);
+  AudioMemory(48);
 }
 
 void loop() {
