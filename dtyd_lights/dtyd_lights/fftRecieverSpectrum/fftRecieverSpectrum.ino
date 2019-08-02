@@ -20,7 +20,8 @@ const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
-int slaveNum = 1;              //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
+
+int slaveNum = 1; // only 1 communicates with master, 3->2->1->Master (ready for FFT message)
 
 float beat_threshold = .96;
 int old_color;
@@ -122,12 +123,13 @@ void setup() {
     // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
     pinMode(4, INPUT);
   }
-  
+
   delay(1000);
   Serial.println("serial working properly");
 }
 
 void loop() {
+  //TtoTSerial.write(recieverReadyMessage);
   sendReadyMessage(slaveNum);
   getFFT();
   turnOffReadyMessage(slaveNum);
