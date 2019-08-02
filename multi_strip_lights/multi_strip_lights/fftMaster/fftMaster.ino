@@ -15,12 +15,6 @@ const int myInput = AUDIO_INPUT_LINEIN;
 const int AUDIO_INPUT_PIN = 14;              // Input ADC pin for audio data.
 
 // Audio library objects
-/*
-AudioInputI2S            audioInput;         // audio shield: line-in
-//AudioInputAnalogStereo   adc1(AUDIO_INPUT_PIN);       
-AudioAnalyzeFFT1024      fft;        
-AudioConnection          patchCord1(audioInput, 0, fft, 0);                 
-AudioControlSGTL5000     audioShield;*/
 const float auxInputVolume = 0.75;
 
 //Alex proposed changes, need to verify with hardware
@@ -101,12 +95,6 @@ void sendFFT(){
     //Serial.println(reconstruct);
     recieverReadyFlag = false;
   }
-//  float newTime = micros();
-//  String difference = String(newTime - timeNow);
-//  timeNow = newTime;
-//  Serial.print("FFT Sent, microseconds elapsed: ");
-//  Serial.print(difference);
-//  Serial.print("\n");
 }
 
 void sendTest(){

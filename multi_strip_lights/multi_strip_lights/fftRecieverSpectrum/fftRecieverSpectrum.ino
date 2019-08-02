@@ -45,11 +45,6 @@ const int OUTPUT_PIN = 5;           // Output pin for neo pixels.
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
-//AudioInputI2S       audioInput;
-//AudioInputAnalog         adc1(AUDIO_INPUT_PIN);       //xy=99,55
-//AudioAnalyzeFFT1024      fft;                         //xy=265,75
-//AudioConnection          patchCord1(adc1, fft);
-//AudioControlSGTL5000     audioShield;
 //empty array for generating 
 int genFrequencyBinsHorizontal[NUM_BINS];
 float genFrequencyLabelsHorizontal[NUM_BINS];
@@ -61,9 +56,6 @@ float logLevelsEq[HALF_NUM_BINS];
 //int startTimer = 0;
 int timer = 0;
 int counter = 0;
-
-//byte drawingMemory[NUM_LEDS*3];         //  3 bytes per LED
-//DMAMEM byte displayMemory[NUM_LEDS*12]; // 12 bytes per LED
 
 int BUTTON_PIN = 33;
 int BUTT_TIME = 0;
@@ -90,17 +82,9 @@ void setup() {
   TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);
   Serial.println("beginning");
-  //pinMode(BUTTON_PIN, INPUT_PULLUP); // pin 14 used for button read
-  // the audio library needs to be given memory to start working
-  //AudioMemory(24); 
-  //audioShield.enable();
-  //audioShield.inputSelect(myInput);
-  //audioShield.volume(0.5);
   writeFrequencyBinsHorizontal();
-  //Serial.println("INIT");
   //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
   //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
-  
   color_spectrum_half_wrap_setup();
   //color_spectrum_setup(255,0);
 
@@ -322,12 +306,8 @@ void color_spectrum_half_wrap(bool useEq){
   //Serial.println("loop time");
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
-      //Serial.println(x);
-      //Serial.println(freqBin);
-      //Serial.println(genFrequencyHalfBinsHorizontal[x] - 1);
       level = read_fft(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
-      //level = random(1);
-       //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
+      //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
       if(useEq==true){
         level = (level*logLevelsEq[x]*255)*(10); 
@@ -422,12 +402,9 @@ float prevBassPower = 0;
 
 bool beatDetector(){
   // return true if beat detected
-  float newBassPower = getBassPower(10);
-  //Serial.println("beatDetector");
-  //Serial.println(newBassPower-prevBassPower);  
+  float newBassPower = getBassPower(10);  
   if ((newBassPower - prevBassPower) > beat_threshold){
     // beat detected!
-    //Serial.println("beat detected");
     prevBassPower = newBassPower;
     return true;
   }
@@ -446,9 +423,6 @@ void beatDetectorUpdate(){
   if (beatDetector() && beatTimer > 11){
     //Serial.println("wow");
     beatDetected = true;
-    //int new_color = choose_random_color(old_color);
-    //color_spread(new_color);
-    //old_color = new_color;
     beatTimer = 0;
   }
   beatTimer += 1;
