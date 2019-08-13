@@ -1,4 +1,3 @@
-
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
@@ -9,28 +8,22 @@
 #define TtoTSerial Serial1 // Serial Communication with other teensy
 
 // Line In
-const int myInput = AUDIO_INPUT_LINEIN;
+const int lineIn = AUDIO_INPUT_LINEIN;
+const float auxInputVolume = 1;
 
-// PINS!
-const int AUDIO_INPUT_PIN = 14;              // Input ADC pin for audio data.
+// Mic In
+const int micIn = AUDIO_INPUT_MIC;
 
-// Audio library objects
-const float auxInputVolume = 0.75;
-
-//Alex proposed changes, need to verify with hardware
-
-AudioInputI2S            i2s2;           //xy=55,496
-AudioMixer4              mixer;         //xy=194,505
-AudioAnalyzeFFT1024      fft;      //xy=328,490
+/*
+ * sums both left and right aux input and sends to FFT
+ */
+AudioInputI2S            i2s2;           
+AudioMixer4              mixer;         
+AudioAnalyzeFFT1024      fft;     
 AudioConnection          patchCord1(i2s2, 0, mixer, 0);
 AudioConnection          patchCord2(i2s2, 1, mixer, 1);
 AudioConnection          patchCord3(mixer, fft);
 AudioControlSGTL5000     audioShield;
-
-
-// for testing purposes
-int startTimer = 0;
-int timer = 0;
 
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -50,6 +43,7 @@ const int recieverReadyMessage = 0xff;
 
 // Run setup once
 void setup() {
+  // Setup computer and inter-teensy serial
   TtoTSerial.setTX(1);
   TtoTSerial.setRX(0);
   TtoTSerial.begin(2000000);  // highest zero-error baud rate, 2000000 (4608000 has theoretical -0.79% error)
@@ -57,20 +51,27 @@ void setup() {
   Serial.println("serial port open");
   
   // Enable the audio shield and set the output volume
-  audioShield.enable();
-  audioShield.inputSelect(myInput);
-  audioShield.volume(auxInputVolume);
-  // the audio library needs to be given memory to start working
   AudioMemory(48);
+  audioShield.enable();
+  audioShield.inputSelect(micIn); // select mic or aux
+  audioShield.volume(auxInputVolume);
+  audioShield.micGain(100);
+  
 }
 
 void loop() {
+  if (fft.available()){
+    Serial.println(fft.read(0,500));
+  }
+
+  /*
   if (fft.available() && recieverReadyFlag) {
     sendFFT();  // Send all FFT data to other teensy/teensies 
   }
   else{
     listenForRecieverReadyFlag(); // only send if reciever is ready!
   }
+  */
 }
 
 void listenForRecieverReadyFlag(){
@@ -91,8 +92,6 @@ void sendFFT(){
     byte secondOne = (byte)(dataPoint&lowHex);
     TtoTSerial.write(firstOne);                   // transit MSBits first, cast to 8bit data
     TtoTSerial.write(secondOne);                  // transmit LSBits second, cast to 8bit data
-    unsigned int reconstruct = (firstOne << 8) + secondOne;
-    //Serial.println(reconstruct);
     recieverReadyFlag = false;
   }
 }

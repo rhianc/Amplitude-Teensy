@@ -4,12 +4,13 @@
 #include <SPI.h>
 #include <SerialFlash.h>
 #include "FastLED.h"
-//#include <WS2812Serial.h>
 #include <math.h>
 
 // Important Constants
 #define NUM_LEDS 150          // LEDs per strip
 #define BIN_WIDTH 1           // lights with the same frequency assignment
+
+#define TtoTSerial Serial1
 
 //changes for OctoWS2811 Library   
 /////////////////////////////////// 
@@ -21,7 +22,10 @@ OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
 
-int slaveNum = 1; // only 1 communicates with master, 3->2->1->Master (ready for FFT message)
+**********************
+int slaveNum = 1;        //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
+**********************
+
 
 float beat_threshold = .96;
 int old_color;
@@ -45,7 +49,6 @@ const int OUTPUT_PIN = 5;           // Output pin for neo pixels.
 const int NUM_BINS = floor(NUM_LEDS/(BIN_WIDTH)); //Get the number of bins based on NUM_LEDS and BIN_WIDTH
 const int HALF_NUM_BINS = floor(NUM_LEDS/(2*BIN_WIDTH)); //Over two for half wrap
 
-//empty array for generating 
 int genFrequencyBinsHorizontal[NUM_BINS];
 float genFrequencyLabelsHorizontal[NUM_BINS];
 
@@ -53,16 +56,12 @@ int genFrequencyHalfBinsHorizontal[HALF_NUM_BINS];
 float genFrequencyHalfLabelsHorizontal[HALF_NUM_BINS];
 float logLevelsEq[HALF_NUM_BINS];
 
-//int startTimer = 0;
 int timer = 0;
 int counter = 0;
 
 int BUTTON_PIN = 33;
 int BUTT_TIME = 0;
 const int myInput = AUDIO_INPUT_LINEIN;
-//WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, OUTPUT_PIN, WS2812_GRB);
-
-#define TtoTSerial Serial1
 
 int fftData[512];
 bool fftDataAvailable = false;
@@ -81,10 +80,7 @@ void setup() {
   TtoTSerial.setRX(0);
   TtoTSerial.begin(2000000); // highest zero-error baud rate (4608000 has theoretical -0.79% error)
   Serial.begin(2000000);
-  Serial.println("beginning");
   writeFrequencyBinsHorizontal();
-  //creates spectrum array (fleds) for color reference later. First value is range (0-255) of spectrum to use, second is starting value. Negate range to flip order.
-  //Note: (-255,0 will be solid since the starting value input only loops for positive values, all negative values are equiv to 0 so you would want -255,255 for a reverse spectrum)
   color_spectrum_half_wrap_setup();
   //color_spectrum_setup(255,0);
 
@@ -108,14 +104,19 @@ void setup() {
     pinMode(4, INPUT);
   }
 
+  // enable output on step-up IC
+  pinMode(16, OUTPUT);
+  digitalWrite(16, LOW);
+  
   delay(1000);
-  Serial.println("serial working properly");
+  //Serial.println("serial working properly");
 }
 
 void loop() {
-  //TtoTSerial.write(recieverReadyMessage);
   sendReadyMessage(slaveNum);
+  //Serial.println("ready for FFT");
   getFFT();
+  //Serial.println("got FFT");
   turnOffReadyMessage(slaveNum);
   color_spectrum_half_wrap(true);
   beatDetectorUpdate();
@@ -137,13 +138,13 @@ void sendReadyMessage(int slaveNumber){
       break;
     case 2:
       // read ready signal from teensy 3 on pin 3, then send ready signal to teensy 1 on pin 4
-      //while (digitalRead(3) == LOW){
+      while (digitalRead(4) == LOW){
         // do nothing
-      //}        
-      //if (digitalRead(3) == HIGH){       
+      }        
+      if (digitalRead(4) == HIGH){       
         digitalWrite(3, HIGH);
         //Serial.println("sending ready for fft message 2");
-      //}
+      }
       break;
     default:
       // ready ready signal from teensy 2 on pin 4, then send ready signal to master using Serial1 
@@ -261,7 +262,7 @@ void getFFT() {
       else{
         byteCount = 0;
         fftData[binCount] = dataInBits + incomingByte;
-        //Serial.println(fftData[binCount]);
+        Serial.println(fftData[binCount]);
         binCount += 1;
         dataInBits = 0;
       }
@@ -306,8 +307,12 @@ void color_spectrum_half_wrap(bool useEq){
   //Serial.println("loop time");
   for (x=0; x < HALF_NUM_BINS; x++) {
       // get the volume for each horizontal pixel position
+      //Serial.println(x);
+      //Serial.println(freqBin);
+      //Serial.println(genFrequencyHalfBinsHorizontal[x] - 1);
       level = read_fft(freqBin, freqBin + genFrequencyHalfBinsHorizontal[x] - 1);
-      //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
+      //level = random(1);
+       //using equal volume contours to create a liner approximation (lazy fit) and normalizing. took curve for 60Db. labels geerates freq in hz for bin
       //gradient value (0.00875) was calculated but using rlly aggressive 0.06 to account for bassy speaker, mic,  and room IR.Numbers seem way off though...
       if(useEq==true){
         level = (level*logLevelsEq[x]*255)*(10); 
@@ -402,9 +407,12 @@ float prevBassPower = 0;
 
 bool beatDetector(){
   // return true if beat detected
-  float newBassPower = getBassPower(10);  
+  float newBassPower = getBassPower(10);
+  //Serial.println("beatDetector");
+  //Serial.println(newBassPower-prevBassPower);  
   if ((newBassPower - prevBassPower) > beat_threshold){
     // beat detected!
+    //Serial.println("beat detected");
     prevBassPower = newBassPower;
     return true;
   }
@@ -423,6 +431,9 @@ void beatDetectorUpdate(){
   if (beatDetector() && beatTimer > 11){
     //Serial.println("wow");
     beatDetected = true;
+    //int new_color = choose_random_color(old_color);
+    //color_spread(new_color);
+    //old_color = new_color;
     beatTimer = 0;
   }
   beatTimer += 1;
