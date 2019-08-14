@@ -18,6 +18,7 @@ You may need to associate your git account with your computer and should add an 
 	slave teensy (what you should touch) -> amplitude/multi_strip_lights/AmplitudeLights/fftBigBoyReceiver
 
 8 strip reactive lights:
+
 	amplitude/multi_strip_lights/AmplitudeLights/fftSmallBoy
 
 ## TO DO
