@@ -75,12 +75,6 @@ bool beatDetected;
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
 
-int testData = 12345;
-
-// only send data when proper reciever ready message recieved on this end
-bool recieverReadyFlag = false;
-const int recieverReadyMessage = 0xff;
-
 // Run setup once
 void setup() {
   // Enable Serial
@@ -327,16 +321,17 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
     blue = b*(1-((8*(1./12)) +((x%4)*(1./11.1))));
 
+    float colors[3] = {red, green, blue};
+
     if((r>0&&g>0)||(r>0&&b>0)||(b>0&&g>0)){
       pureC = false;
     }
     
-    if(((red<20)||green<20)||(blue<20)) && (pureC == false)){
-      red = 0;
-      green = 0;
-      blue = 0;
-    } 
-      
-    leds.setPixel(x*NUM_LEDS+i, red, green, blue);
+    if(((colors[0]<20)||(colors[1]<20)||(colors[2]<20)) && (pureC == false)){
+      for(int c;c<3;c++){
+        colors[c] = 0;
+      }
+    }   
+    leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
   }
 }

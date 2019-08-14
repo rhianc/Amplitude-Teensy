@@ -1,0 +1,384 @@
+PCBNEW-LibModule-V1  
+# encoding utf-8
+Units mm
+$INDEX
+AUDIOSHIELD
+$EndINDEX
+$MODULE AUDIOSHIELD
+Po 0 0 0 15 00000000 00000000 ~~
+Li AUDIOSHIELD
+Cd 
+Sc 00000000
+At STD
+Op 0 0 0
+.SolderMask 0
+.SolderPaste 0
+T0 0 0 1 0.9 0 0.05 N H 21 "AUDIOSHIELD"
+T1 0 0 1 0.9 0 0.05 N H 21 "VAL**"
+DS -17.78 17.78 17.78 17.78 0.127 21
+DS -17.78 -19.05 17.78 -19.05 0.127 21
+DS 17.78 -19.05 17.78 17.78 0.127 21
+T2 -4.445000 -2.540000 1 1 0 .05 N V 21 "Audio~Shield"
+DS -17.399 12.7 -2.399 12.7 0.127 21
+DS -17.399 9.7 -2.399 9.7 0.127 27
+DS -17.399 15.7 -2.399 15.7 0.127 27
+DS -2.399 9.7 -2.399 15.7 0.127 27
+DS -17.78 -19.05 17.78 -19.05 0.127 27
+DS 17.78 -19.05 17.78 17.78 0.127 27
+DS 17.78 17.78 -17.78 17.78 0.127 27
+DS -17.78 17.78 -17.78 -19.05 0.127 27
+$PAD
+Sh "Hole" C 2.921 2.921 0 0 0
+Dr 2.921 0 0
+At HOLE N 00E0FFFF
+Po 1.905 14.605
+$EndPAD
+$PAD
+Sh "Hole" C 2.921 2.921 0 0 0
+Dr 2.921 0 0
+At HOLE N 00E0FFFF
+Po -14.605 -15.875
+$EndPAD
+$PAD
+Sh "Hole" C 2.921 2.921 0 0 0
+Dr 2.921 0 0
+At HOLE N 00E0FFFF
+Po 14.605 -15.875
+$EndPAD
+$PAD
+Sh "GND" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -16.51 5.08
+$EndPAD
+$PAD
+Sh "GND_MIC" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -16.51 -2.54
+$EndPAD
+$PAD
+Sh "MIC" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -16.51 -5.08
+$EndPAD
+$PAD
+Sh "INL" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -5.08 -13.97
+$EndPAD
+$PAD
+Sh "INR" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -2.54 -13.97
+$EndPAD
+$PAD
+Sh "INGND1" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -5.08 -16.51
+$EndPAD
+$PAD
+Sh "INGND2" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -2.54 -16.51
+$EndPAD
+$PAD
+Sh "OUTR" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 0 -13.97
+$EndPAD
+$PAD
+Sh "OUTGND" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 2.54 -13.97
+$EndPAD
+$PAD
+Sh "OUTL" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 5.08 -13.97
+$EndPAD
+$PAD
+Sh "UNUSED1" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 0 -16.51
+$EndPAD
+$PAD
+Sh "UNUSED2" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 5.08 -16.51
+$EndPAD
+$PAD
+Sh "0" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -13.97 5.08
+$EndPAD
+$PAD
+Sh "1" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -11.43 5.08
+$EndPAD
+$PAD
+Sh "2" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -8.89 5.08
+$EndPAD
+$PAD
+Sh "3" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -6.35 5.08
+$EndPAD
+$PAD
+Sh "4" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -3.81 5.08
+$EndPAD
+$PAD
+Sh "5" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -1.27 5.08
+$EndPAD
+$PAD
+Sh "6" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 1.27 5.08
+$EndPAD
+$PAD
+Sh "7" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 3.81 5.08
+$EndPAD
+$PAD
+Sh "8" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 6.35 5.08
+$EndPAD
+$PAD
+Sh "9" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 8.89 5.08
+$EndPAD
+$PAD
+Sh "10" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 11.43 5.08
+$EndPAD
+$PAD
+Sh "11" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 13.97 5.08
+$EndPAD
+$PAD
+Sh "12" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 16.51 5.08
+$EndPAD
+$PAD
+Sh "5V" C 1.778 1.778 0 0 1800
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -16.51 -10.16
+$EndPAD
+$PAD
+Sh "G" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -13.97 -10.16
+$EndPAD
+$PAD
+Sh "3V" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -11.43 -10.16
+$EndPAD
+$PAD
+Sh "23" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -8.89 -10.16
+$EndPAD
+$PAD
+Sh "22" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -6.35 -10.16
+$EndPAD
+$PAD
+Sh "21" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -3.81 -10.16
+$EndPAD
+$PAD
+Sh "20" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po -1.27 -10.16
+$EndPAD
+$PAD
+Sh "19" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 1.27 -10.16
+$EndPAD
+$PAD
+Sh "18" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 3.81 -10.16
+$EndPAD
+$PAD
+Sh "17" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 6.35 -10.16
+$EndPAD
+$PAD
+Sh "16" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 8.89 -10.16
+$EndPAD
+$PAD
+Sh "15" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 11.43 -10.16
+$EndPAD
+$PAD
+Sh "14" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 13.97 -10.16
+$EndPAD
+$PAD
+Sh "13" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 16.51 -10.16
+$EndPAD
+$PAD
+Sh "VOL_3.3V" C 1.778 1.778 0 0 0
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 8.255 15.875
+$EndPAD
+$PAD
+Sh "VOL" C 1.778 1.778 0 0 900
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 8.255 13.335
+$EndPAD
+$PAD
+Sh "VOL_GND" C 1.778 1.778 0 0 900
+Dr 1 0 0
+At STD N 00C0FFFF
+.SolderMask 0
+Ne 0 ""
+Po 8.255 10.795
+$EndPAD
+$EndMODULE AUDIOSHIELD

@@ -1,0 +1,425 @@
+EESchema Schematic File Version 4
+LIBS:powerDistro-cache
+EELAYER 29 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L rhianLib:ethernetOut J4
+U 1 1 5D1BB6EA
+P 4500 1700
+F 0 "J4" H 4628 1796 50  0000 L CNN
+F 1 "ethernetOut" H 4628 1705 50  0000 L CNN
+F 2 "personalFootprints:cat6out" H 4500 2750 50  0001 C CNN
+F 3 "" H 4500 2750 50  0001 C CNN
+	1    4500 1700
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Screw_Terminal_01x04 J1
+U 1 1 5D1BFCB1
+P 1950 3050
+F 0 "J1" H 2030 3042 50  0000 L CNN
+F 1 "Screw_Terminal_01x04" H 2030 2951 50  0000 L CNN
+F 2 "" H 1950 3050 50  0001 C CNN
+F 3 "~" H 1950 3050 50  0001 C CNN
+	1    1950 3050
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Screw_Terminal_01x04 J2
+U 1 1 5D20093B
+P 1950 4100
+F 0 "J2" H 2030 4092 50  0000 L CNN
+F 1 "Screw_Terminal_01x04" H 2030 4001 50  0000 L CNN
+F 2 "" H 1950 4100 50  0001 C CNN
+F 3 "~" H 1950 4100 50  0001 C CNN
+	1    1950 4100
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Screw_Terminal_01x04 J3
+U 1 1 5D203FCD
+P 1950 5150
+F 0 "J3" H 2030 5142 50  0000 L CNN
+F 1 "Screw_Terminal_01x04" H 2030 5051 50  0000 L CNN
+F 2 "" H 1950 5150 50  0001 C CNN
+F 3 "~" H 1950 5150 50  0001 C CNN
+	1    1950 5150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1750 3150 1750 3250
+Connection ~ 1750 3250
+Wire Wire Line
+	1750 3250 1750 3400
+Wire Wire Line
+	1750 4200 1750 4300
+Connection ~ 1750 4300
+Wire Wire Line
+	1750 4300 1750 4450
+Wire Wire Line
+	1750 5250 1750 5350
+Connection ~ 1750 5350
+Wire Wire Line
+	1750 5350 1750 5500
+Wire Wire Line
+	1750 5150 1750 5050
+Connection ~ 1750 5050
+Wire Wire Line
+	1750 5050 1750 4900
+Wire Wire Line
+	1750 4100 1750 4000
+Connection ~ 1750 4000
+Wire Wire Line
+	1750 4000 1750 3850
+Wire Wire Line
+	1750 3050 1750 2950
+Connection ~ 1750 2950
+Wire Wire Line
+	1750 2950 1750 2800
+Wire Wire Line
+	4350 900  4200 900 
+Wire Wire Line
+	4200 900  4200 1100
+Wire Wire Line
+	4350 1100 4200 1100
+Connection ~ 4200 1100
+Wire Wire Line
+	4200 1100 4200 1300
+Wire Wire Line
+	4350 1300 4200 1300
+Connection ~ 4200 1300
+Wire Wire Line
+	4200 1300 4200 1500
+Wire Wire Line
+	4350 1500 4200 1500
+Connection ~ 4200 1500
+Wire Wire Line
+	4200 1500 4200 1700
+Wire Wire Line
+	4350 1700 4200 1700
+Connection ~ 4200 1700
+Wire Wire Line
+	4200 1700 4200 1900
+Wire Wire Line
+	4350 1900 4200 1900
+Connection ~ 4200 1900
+Wire Wire Line
+	4200 1900 4200 2100
+Wire Wire Line
+	4350 2100 4200 2100
+Connection ~ 4200 2100
+Wire Wire Line
+	4200 2100 4200 2300
+Wire Wire Line
+	4350 2300 4200 2300
+Connection ~ 4200 2300
+Wire Wire Line
+	4200 2300 4200 2550
+Wire Wire Line
+	4350 2400 4050 2400
+Wire Wire Line
+	4050 2400 4050 2200
+Wire Wire Line
+	4350 1000 4050 1000
+Connection ~ 4050 1000
+Wire Wire Line
+	4050 1000 4050 750 
+Wire Wire Line
+	4350 1200 4050 1200
+Connection ~ 4050 1200
+Wire Wire Line
+	4050 1200 4050 1000
+Wire Wire Line
+	4350 1400 4050 1400
+Connection ~ 4050 1400
+Wire Wire Line
+	4050 1400 4050 1200
+Wire Wire Line
+	4350 1600 4050 1600
+Connection ~ 4050 1600
+Wire Wire Line
+	4050 1600 4050 1400
+Wire Wire Line
+	4350 1800 4050 1800
+Connection ~ 4050 1800
+Wire Wire Line
+	4050 1800 4050 1600
+Wire Wire Line
+	4350 2000 4050 2000
+Connection ~ 4050 2000
+Wire Wire Line
+	4050 2000 4050 1800
+Wire Wire Line
+	4350 2200 4050 2200
+Connection ~ 4050 2200
+Wire Wire Line
+	4050 2200 4050 2000
+$Comp
+L rhianLib:ethernetOut J5
+U 1 1 5D21E3E2
+P 4500 4050
+F 0 "J5" H 4628 4146 50  0000 L CNN
+F 1 "ethernetOut" H 4628 4055 50  0000 L CNN
+F 2 "personalFootprints:cat6out" H 4500 5100 50  0001 C CNN
+F 3 "" H 4500 5100 50  0001 C CNN
+	1    4500 4050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4350 3250 4200 3250
+Wire Wire Line
+	4200 3250 4200 3450
+Wire Wire Line
+	4350 3450 4200 3450
+Connection ~ 4200 3450
+Wire Wire Line
+	4200 3450 4200 3650
+Wire Wire Line
+	4350 3650 4200 3650
+Connection ~ 4200 3650
+Wire Wire Line
+	4200 3650 4200 3850
+Wire Wire Line
+	4350 3850 4200 3850
+Connection ~ 4200 3850
+Wire Wire Line
+	4200 3850 4200 4050
+Wire Wire Line
+	4350 4050 4200 4050
+Connection ~ 4200 4050
+Wire Wire Line
+	4200 4050 4200 4250
+Wire Wire Line
+	4350 4250 4200 4250
+Connection ~ 4200 4250
+Wire Wire Line
+	4200 4250 4200 4450
+Wire Wire Line
+	4350 4450 4200 4450
+Connection ~ 4200 4450
+Wire Wire Line
+	4200 4450 4200 4650
+Wire Wire Line
+	4350 4650 4200 4650
+Connection ~ 4200 4650
+Wire Wire Line
+	4200 4650 4200 4900
+Wire Wire Line
+	4350 4750 4050 4750
+Wire Wire Line
+	4050 4750 4050 4550
+Wire Wire Line
+	4350 3350 4050 3350
+Connection ~ 4050 3350
+Wire Wire Line
+	4050 3350 4050 3100
+Wire Wire Line
+	4350 3550 4050 3550
+Connection ~ 4050 3550
+Wire Wire Line
+	4050 3550 4050 3350
+Wire Wire Line
+	4350 3750 4050 3750
+Connection ~ 4050 3750
+Wire Wire Line
+	4050 3750 4050 3550
+Wire Wire Line
+	4350 3950 4050 3950
+Connection ~ 4050 3950
+Wire Wire Line
+	4050 3950 4050 3750
+Wire Wire Line
+	4350 4150 4050 4150
+Connection ~ 4050 4150
+Wire Wire Line
+	4050 4150 4050 3950
+Wire Wire Line
+	4350 4350 4050 4350
+Connection ~ 4050 4350
+Wire Wire Line
+	4050 4350 4050 4150
+Wire Wire Line
+	4350 4550 4050 4550
+Connection ~ 4050 4550
+Wire Wire Line
+	4050 4550 4050 4350
+$Comp
+L rhianLib:ethernetOut J6
+U 1 1 5D220E00
+P 4500 6550
+F 0 "J6" H 4628 6646 50  0000 L CNN
+F 1 "ethernetOut" H 4628 6555 50  0000 L CNN
+F 2 "personalFootprints:cat6out" H 4500 7600 50  0001 C CNN
+F 3 "" H 4500 7600 50  0001 C CNN
+	1    4500 6550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4350 5750 4200 5750
+Wire Wire Line
+	4200 5750 4200 5950
+Wire Wire Line
+	4350 5950 4200 5950
+Connection ~ 4200 5950
+Wire Wire Line
+	4200 5950 4200 6150
+Wire Wire Line
+	4350 6150 4200 6150
+Connection ~ 4200 6150
+Wire Wire Line
+	4200 6150 4200 6350
+Wire Wire Line
+	4350 6350 4200 6350
+Connection ~ 4200 6350
+Wire Wire Line
+	4200 6350 4200 6550
+Wire Wire Line
+	4350 6550 4200 6550
+Connection ~ 4200 6550
+Wire Wire Line
+	4200 6550 4200 6750
+Wire Wire Line
+	4350 6750 4200 6750
+Connection ~ 4200 6750
+Wire Wire Line
+	4200 6750 4200 6950
+Wire Wire Line
+	4350 6950 4200 6950
+Connection ~ 4200 6950
+Wire Wire Line
+	4200 6950 4200 7150
+Wire Wire Line
+	4350 7150 4200 7150
+Connection ~ 4200 7150
+Wire Wire Line
+	4200 7150 4200 7400
+Wire Wire Line
+	4350 7250 4050 7250
+Wire Wire Line
+	4050 7250 4050 7050
+Wire Wire Line
+	4350 5850 4050 5850
+Connection ~ 4050 5850
+Wire Wire Line
+	4050 5850 4050 5600
+Wire Wire Line
+	4350 6050 4050 6050
+Connection ~ 4050 6050
+Wire Wire Line
+	4050 6050 4050 5850
+Wire Wire Line
+	4350 6250 4050 6250
+Connection ~ 4050 6250
+Wire Wire Line
+	4050 6250 4050 6050
+Wire Wire Line
+	4350 6450 4050 6450
+Connection ~ 4050 6450
+Wire Wire Line
+	4050 6450 4050 6250
+Wire Wire Line
+	4350 6650 4050 6650
+Connection ~ 4050 6650
+Wire Wire Line
+	4050 6650 4050 6450
+Wire Wire Line
+	4350 6850 4050 6850
+Connection ~ 4050 6850
+Wire Wire Line
+	4050 6850 4050 6650
+Wire Wire Line
+	4350 7050 4050 7050
+Connection ~ 4050 7050
+Wire Wire Line
+	4050 7050 4050 6850
+$Comp
+L power:GND #PWR?
+U 1 1 5D22FBB1
+P 1750 3400
+F 0 "#PWR?" H 1750 3150 50  0001 C CNN
+F 1 "GND" H 1755 3227 50  0000 C CNN
+F 2 "" H 1750 3400 50  0001 C CNN
+F 3 "" H 1750 3400 50  0001 C CNN
+	1    1750 3400
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5D22FD47
+P 1750 4450
+F 0 "#PWR?" H 1750 4200 50  0001 C CNN
+F 1 "GND" H 1755 4277 50  0000 C CNN
+F 2 "" H 1750 4450 50  0001 C CNN
+F 3 "" H 1750 4450 50  0001 C CNN
+	1    1750 4450
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5D22FEDD
+P 1750 5500
+F 0 "#PWR?" H 1750 5250 50  0001 C CNN
+F 1 "GND" H 1755 5327 50  0000 C CNN
+F 2 "" H 1750 5500 50  0001 C CNN
+F 3 "" H 1750 5500 50  0001 C CNN
+	1    1750 5500
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5D237F65
+P 4200 2550
+F 0 "#PWR?" H 4200 2300 50  0001 C CNN
+F 1 "GND" H 4205 2377 50  0000 C CNN
+F 2 "" H 4200 2550 50  0001 C CNN
+F 3 "" H 4200 2550 50  0001 C CNN
+	1    4200 2550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5D238113
+P 4200 4900
+F 0 "#PWR?" H 4200 4650 50  0001 C CNN
+F 1 "GND" H 4205 4727 50  0000 C CNN
+F 2 "" H 4200 4900 50  0001 C CNN
+F 3 "" H 4200 4900 50  0001 C CNN
+	1    4200 4900
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 5D2382CD
+P 4200 7400
+F 0 "#PWR?" H 4200 7150 50  0001 C CNN
+F 1 "GND" H 4205 7227 50  0000 C CNN
+F 2 "" H 4200 7400 50  0001 C CNN
+F 3 "" H 4200 7400 50  0001 C CNN
+	1    4200 7400
+	1    0    0    -1  
+$EndComp
+Text Label 1750 2800 0    50   ~ 0
+5V1
+Text Label 1750 3850 0    50   ~ 0
+5V2
+Text Label 1750 4900 0    50   ~ 0
+5V3
+Text Label 4050 5600 0    50   ~ 0
+5V3
+Text Label 4050 3100 0    50   ~ 0
+5V2
+Text Label 4050 750  0    50   ~ 0
+5V1
+$EndSCHEMATC
