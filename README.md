@@ -1,19 +1,30 @@
-# Spectrum Reactive LED Strips!
-##  FFT based music visualization
+# PROPRIETARY AMPLITUDE LIGHTING SOFTWARE/HARDWARE REPOSITORY
 
-HOW TO CORRECTLY CLONE THIS REPO:
-git clone --recurse-submodules git@github.com:vfink/amplitude_lights.git
+##  HOW TO CLONE THIS REPO
+
+in unix terminal:
+
+$ git clone --recurse-submodules git@github.com:vfink/amplitude_lights.git
 
 If you do not include the "--recurse-submodules" you will not have the correct library to run the lights
 
-Base things to do : Create some wiring diagrams, explain hardware and hardware things like A/R to Vdd, explain base premisis of code, key functions etc
+You may need to associate your git account with your computer and should add an SSH key to both your laptop and github account so you don't have to type your password every time. 
 
-```
-_swoosh_
-```
+## WHERE IS EVERYTHING
 
-## Basic Wiring
-![Screenshot](wiring.jpg)
+24 strip reactive lights:
+
+	master teensy -> amplitude/multi_strip_lights/AmplitudeLights/fftBigBoyMaster
+	slave teensy (what you should touch) -> amplitude/multi_strip_lights/AmplitudeLights/fftBigBoyReceiver
+
+8 strip reactive lights:
+	amplitude/multi_strip_lights/AmplitudeLights/fftSmallBoy
+
+## TO DO
+
+list ideas and current work here
+
+## NOTES
 
 Cool explanations of why we have to use FreqBinGen and why we SHOULD add some sort of EQ to the processing.
 https://www.audiocheck.net/soundtests_nonlinear.php
