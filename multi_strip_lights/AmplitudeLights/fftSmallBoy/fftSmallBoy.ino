@@ -71,6 +71,15 @@ float startTimer = millis();
 
 bool beatDetected;
 
+const int ALPHABET_LEN = 26;
+char alphabet[ALPHABET_LEN] = "abcdefghijklmnopqrstuvwxyz";
+//2 digits of OCTAL numbers. need to be broken down into binary. each number in a lettrs array represents a row. 6 binary digits in a row, 8 rows. Each letter is 6 columns of 8 lights, which limits small display to 10 letters.
+//                                 A{14,22,41,41,77,41,41,41}B                         C                         D                         E                         F                         G                         H                         I                         J                         K                         L                         M                         N                         O                         P                         Q                         R                         S                         T                         U                         V                         W                         X                         Y                         Z
+int pixel_map[ALPHABET_LEN][8] = {{14,22,41,41,77,41,41,41},{76,41,41,76,76,41,41,76},{77,40,40,40,40,40,40,77},{76,43,43,43,43,43,43,76},{77,40,40,77,77,40,40,77},{77,40,40,77,40,40,40,40},{77,40,40,40,47,41,41,77},{63,63,63,77,77,63,63,63},{77,14,14,14,14,14,14,77},{77,14,14,14,14,54,74,30},{61,62,64,70,70,64,62,61},{60,60,60,60,60,60,77,77},{36,77,55,55,55,55,55,55},{41,61,71,55,55,47,43,41},{36,63,63,63,63,63,63,36},{76,63,63,76,60,60,60,60},{36,63,63,63,73,67,76,75},{77,63,63,77,74,66,63,63},{77,60,60,74,17,03,03,77},{77,77,14,14,14,14,14,14},{63,63,63,63,63,63,77,36},{63,63,22,22,36,36,14,14},{55,55,55,55,55,55,77,36},{63,36,36,14,14,36,36,63},{63,63,36,36,14,14,14,14},{77,03,06,14,14,30,60,77}};
+int LetterArray[8][60] = {0};
+int placement[8] = {4,5,6,7,3,2,1,0};
+
+
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
@@ -93,7 +102,7 @@ void setup() {
   color_spectrum_half_wrap_setup();
 
   leds.begin();
-
+  fillLetterArray("test");
   delay(100);
 }
 
@@ -114,6 +123,34 @@ void loop() {
 //-----------------------------------------------------------------------
 //----------------------------SETUP FUNCTIONS----------------------------
 //-----------------------------------------------------------------------
+
+//Write lettering into lights
+void fillLetterArray(char input[]){
+  size_t len = strlen(input);
+  for(int i=0;i<len;i++){
+    fillLetterArrayHelper(30-(len*3)+(6*i),input[i]);
+  }
+}
+
+void fillLetterArrayHelper(int index_start, char letter){
+  int row;
+  int left;
+  int right;
+  const char *ptr = strchr(alphabet, letter);
+    if(ptr) {
+       int index = ptr - alphabet;
+       // do something
+       for(int j=0;j<8;j++){
+        row = pixel_map[index][j];
+        left = floor(row/10);
+        right = row%10;
+        int pixels[6] = {(left/4)%2,(left/2)%2,left%2,(right/4)%2,(right/2)%2,right%2};
+        for(int k=0;k<6;k++){
+          LetterArray[j][index_start+k] = pixels[k];
+        }
+       }
+    }
+}
 
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
@@ -262,7 +299,7 @@ float read_fft(unsigned int binFirst, unsigned int binLast) {
     if (binLast > 511) binLast = 511;
     uint32_t sum = 0;
     do {
-      sum +=1000*fft.read(binFirst++);
+      sum +=10000*fft.read(binFirst++);
       //Serial.println(sum);
     } while (binFirst <= binLast);
     return (float)sum * (1.0 / 16384.0);
@@ -314,6 +351,7 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     float red;
     float green;
     float blue;
+    float white;
     // not really sure why pureC matters, might change decay type
     bool pureC = true;
 
@@ -332,6 +370,11 @@ void allLedsSetPixel(int i, int r, int g, int b) {
         colors[c] = 0;
       }
     }   
-    leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
+    if(LetterArray[placement[x]][i] == 1){
+      white = (red +green + blue)/3.;
+      leds.setPixel(x*NUM_LEDS+i, white, white, white);
+    }else{
+      leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
+    }
   }
 }

@@ -14,9 +14,6 @@ int full_blank[8] = {0,0,0,0,0,0,0,0};
 int half_blank[4] = {0,0,0,0};
 int LetterArray[8][60] = {0};
 int start_number;
-int row;
-int left;
-int right;
 
 
 void setup() {
@@ -31,16 +28,20 @@ void loop() {
   }
 }
 
-void fillLetterArray(char[] input){
-  for(int i=0;i<input.length;i++){
-    fillLetterArrayHelper(30-(input.length*3)+(6*i),input[i]);
+void fillLetterArray(char input[]){
+  size_t len = strlen(input);
+  for(int i=0;i<len;i++){
+    fillLetterArrayHelper(30-(len*3)+(6*i),input[i]);
   }
 }
 
 void fillLetterArrayHelper(int index_start, char letter){
-  const char *ptr = strchr(values, letter);
+  int row;
+  int left;
+  int right;
+  const char *ptr = strchr(alphabet, letter);
     if(ptr) {
-       int index = ptr - values;
+       int index = ptr - alphabet;
        // do something
        for(int j=0;j<8;j++){
         row = pixel_map[index][j];
