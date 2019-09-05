@@ -113,21 +113,22 @@ void setup() {
   color_spectrum_half_wrap_setup();
 
   leds.begin();
-  fillLetterArray("eat ass");
   delay(100);
 }
 
 void loop() {
   checkForMessage();
-  if (fft.available()){
-    color_spectrum_half_wrap(true);
-    //beatDetectorUpdate();
-    leds.show();
-  }
-  timer = millis();
-  if (timer-startTimer > 100){
-    moving_color_spectrum_half_wrap(1);   // modifies color mapping
-    startTimer = millis();
+  if(lightsOn){
+    if (fft.available()){
+      color_spectrum_half_wrap(true);
+      //beatDetectorUpdate();
+      leds.show();
+    }
+    timer = millis();
+    if (timer-startTimer > 100){
+      moving_color_spectrum_half_wrap(1);   // modifies color mapping
+      startTimer = millis();
+    }
   }
 }
 
@@ -228,6 +229,7 @@ void checkForMessage(){
           lightsOn = true;
         }else if(config == "off"){
           allLedsOff();
+          leds.show();
           lightsOn = false;
         }else{
           fillLetterArray(config);
