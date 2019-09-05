@@ -220,7 +220,7 @@ void checkForMessage(){
     incomingByte = Serial1.read();
     message += char(incomingByte);
     }else{
-      if (message == "" || message == config){
+      if (message == ""){
         //do nothing
      }else{
         Serial.println(message);
