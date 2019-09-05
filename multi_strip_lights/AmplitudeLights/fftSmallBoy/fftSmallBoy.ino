@@ -83,6 +83,11 @@ int placement[8] = {4,5,6,7,3,2,1,0};
 int audio_gain = 5000;
 
 
+// Bluetooth Stuff
+String config;
+bool lightsOn = false;
+String message = "";
+int incomingByte;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
@@ -90,9 +95,12 @@ int audio_gain = 5000;
 // Run setup once
 void setup() {
   // Enable Serial
-  Serial.begin(2000000);
+  Serial.begin(9600);
+  Serial1.begin(9600);
   Serial.println("serial port open");
-  
+  config = "on";
+  lightsOn = true;
+  Serial1.print("AT+RESET");
   // Enable the audio shield and set the output volume
   AudioMemory(48);
   audioShield.enable();
@@ -110,6 +118,7 @@ void setup() {
 }
 
 void loop() {
+  checkForMessage();
   if (fft.available()){
     color_spectrum_half_wrap(true);
     //beatDetectorUpdate();
@@ -204,6 +213,35 @@ void color_spectrum_half_wrap_setup() {
 //-----------------------------------------------------------------------
 //----------------------------LOOP FUNCTIONS----------------------------
 //-----------------------------------------------------------------------
+
+void checkForMessage(){
+  if (Serial1.available()){
+    incomingByte = Serial1.read();
+    message += char(incomingByte);
+    }else{
+      if (message == "" || message == config){
+        //do nothing
+     }else{
+        Serial.println(message);
+        config = message;
+        if(config == "on"){
+          lightsOn = true;
+        }else if(config == "off"){
+          allLedsOff();
+          lightsOn = false;
+        }else{
+          fillLetterArray(config);
+        }
+        message = "";
+     }
+   }
+}
+
+void allLedsOff(){
+  for(i=0;i<NUM_LEDS;i++){
+    allLedsSetPixel(i,0,0,0);
+  }
+}
 
 void color_spectrum_half_wrap(bool useEq){
   unsigned int x, freqBin;
