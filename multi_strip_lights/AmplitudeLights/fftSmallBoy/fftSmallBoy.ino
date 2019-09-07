@@ -84,9 +84,9 @@ int audio_gain = 5000;
 
 
 // Bluetooth Stuff
-String config;
+char* config1 = "";
 bool lightsOn = false;
-String message = "";
+char* message = "";
 int incomingByte;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -98,7 +98,7 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
   Serial.println("serial port open");
-  config = "on";
+  config1 = "on";
   lightsOn = true;
   Serial1.print("AT+RESET");
   // Enable the audio shield and set the output volume
@@ -141,7 +141,7 @@ void loop() {
 void fillLetterArray(char input[]){
   size_t len = strlen(input);
   for(int i=0;i<len;i++){
-    fillLetterArrayHelper(30-(len*4)+(8*i) + 1,input[i]);
+    fillLetterArrayHelper(HALF_LEDS-(len*4)+(8*i),input[i]);
   }
 }
 
@@ -224,15 +224,15 @@ void checkForMessage(){
         //do nothing
      }else{
         Serial.println(message);
-        config = message;
-        if(config == "on"){
+        config1 = message;
+        if(config1 == "on"){
           lightsOn = true;
-        }else if(config == "off"){
+        }else if(config1 == "off"){
           allLedsOff();
           leds.show();
           lightsOn = false;
         }else{
-          fillLetterArray(config);
+          fillLetterArray(config1);
         }
         message = "";
      }
@@ -240,7 +240,7 @@ void checkForMessage(){
 }
 
 void allLedsOff(){
-  for(i=0;i<NUM_LEDS;i++){
+  for(int i=0;i<NUM_LEDS;i++){
     allLedsSetPixel(i,0,0,0);
   }
 }
