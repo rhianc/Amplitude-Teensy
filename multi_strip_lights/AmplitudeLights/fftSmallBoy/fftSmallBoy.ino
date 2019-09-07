@@ -84,9 +84,9 @@ int audio_gain = 5000;
 
 
 // Bluetooth Stuff
-char* config1 = "";
+String config1 = "";
 bool lightsOn = false;
-char* message = "";
+String message = "";
 int incomingByte;
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -111,7 +111,7 @@ void setup() {
   // Start LED interface
   writeFrequencyBinsHorizontal();
   color_spectrum_half_wrap_setup();
-
+//  fillLetterArray("aaaa");
   leds.begin();
   delay(100);
 }
@@ -138,8 +138,8 @@ void loop() {
 //-----------------------------------------------------------------------
 
 //Write lettering into lights
-void fillLetterArray(char input[]){
-  size_t len = strlen(input);
+void fillLetterArray(String input){
+  int len = sizeof(input);
   for(int i=0;i<len;i++){
     fillLetterArrayHelper(HALF_LEDS-(len*4)+(8*i),input[i]);
   }
