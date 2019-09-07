@@ -1,6 +1,8 @@
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <string>
+#include <cstring>
 #include <math.h>
 #include <SD.h>
 #include <SerialFlash.h>
@@ -76,7 +78,7 @@ char alphabet[ALPHABET_LEN] = "abcdefghijklmnopqrstuvwxyz ";
 //2 digits of OCTAL numbers. need to be broken down into binary. each number in a lettrs array represents a row. 6 binary digits in a row, 8 rows. Each letter is 6 columns of 8 lights, which limits small display to 10 letters.
 //                                 A{14,22,41,41,77,41,41,41}B                         C                         D                         E                         F                         G                         H                         I                         J                         K                         L                         M                         N                         O                         P                         Q                         R                         S                         T                         U                         V                         W                         X                         Y                         Z
 //int pixel_map[ALPHABET_LEN][8] = {{14,22,41,41,77,41,41,41},{76,41,41,76,76,41,41,76},{77,40,40,40,40,40,40,77},{76,43,43,43,43,43,43,76},{77,40,40,77,77,40,40,77},{77,40,40,77,40,40,40,40},{77,40,40,40,47,41,41,77},{63,63,63,77,77,63,63,63},{77,14,14,14,14,14,14,77},{77,14,14,14,14,54,74,30},{61,62,64,70,70,64,62,61},{60,60,60,60,60,60,77,77},{36,77,55,55,55,55,55,55},{41,61,71,55,55,47,43,41},{36,63,63,63,63,63,63,36},{76,63,63,76,60,60,60,60},{36,63,63,63,73,67,76,75},{77,63,63,77,74,66,63,63},{77,60,60,74,17,03,03,77},{77,77,14,14,14,14,14,14},{63,63,63,63,63,63,77,36},{63,63,22,22,36,36,14,14},{55,55,55,55,55,55,77,36},{63,36,36,14,14,36,36,63},{63,63,36,36,14,14,14,14},{77,03,06,14,14,30,60,77}};
-int pixel_map[ALPHABET_LEN][8] = {{00,14,22,41,77,41,41,00},{00,76,41,76,41,41,76,00},{00,77,40,40,40,40,77,00},{00,74,47,43,43,47,74,00},{00,77,40,77,40,40,77,00},{00,77,40,77,40,40,40,00},{00,77,40,40,47,41,77,00},{00,63,63,77,77,63,63,00},{00,77,14,14,14,14,77,00},{00,77,14,14,54,74,30,00},{00,63,66,74,74,66,63,00},{00,60,60,60,60,60,77,00},{00,77,55,55,55,55,55,00},{00,41,61,51,45,43,41,00},{00,36,63,63,63,63,36,00},{00,76,63,76,60,60,60,00},{00,36,63,63,63,67,35,00},{00,77,63,67,74,66,63,00},{00,77,60,74,17,03,77,00},{00,77,14,14,14,14,14,00},{00,63,63,63,63,63,36,00},{00,63,22,22,22,36,14,00},{00,55,55,55,55,55,77,00},{00,63,22,14,14,22,63,00},{00,63,63,36,14,14,14,00},{00,77,06,14,14,30,77,00},{00,00,00,00,00,00,00,00}};
+int pixel_map[ALPHABET_LEN][8] = {{00,14,22,41,77,41,41,00},{00,76,41,76,41,41,76,00},{00,77,40,40,40,40,77,00},{00,74,47,43,43,47,74,00},{00,77,40,77,40,40,77,00},{00,77,40,77,40,40,40,00},{00,77,40,40,47,41,77,00},{00,63,63,77,77,63,63,00},{00,77,14,14,14,14,77,00},{00,77,14,14,54,74,30,00},{00,63,66,74,74,66,63,00},{00,60,60,60,60,60,77,00},{00,63,77,55,41,41,41,00},{00,41,61,51,45,43,41,00},{00,36,63,63,63,63,36,00},{00,76,63,76,60,60,60,00},{00,36,63,63,63,67,35,00},{00,77,63,67,74,66,63,00},{00,77,60,74,17,03,77,00},{00,77,14,14,14,14,14,00},{00,63,63,63,63,63,36,00},{00,63,22,22,22,36,14,00},{00,55,55,55,55,55,77,00},{00,63,22,14,14,22,63,00},{00,63,63,36,14,14,14,00},{00,77,06,14,14,30,77,00},{00,00,00,00,00,00,00,00}};
 int LetterArray[8][60] = {0};
 int placement[8] = {4,5,6,7,3,2,1,0};
 
@@ -84,7 +86,7 @@ int audio_gain = 5000;
 
 
 // Bluetooth Stuff
-String config1 = "";
+char config1[] = "";
 bool lightsOn = false;
 String message = "";
 int incomingByte;
@@ -98,7 +100,6 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
   Serial.println("serial port open");
-  config1 = "on";
   lightsOn = true;
   Serial1.print("AT+RESET");
   // Enable the audio shield and set the output volume
@@ -111,7 +112,7 @@ void setup() {
   // Start LED interface
   writeFrequencyBinsHorizontal();
   color_spectrum_half_wrap_setup();
-//  fillLetterArray("aaaa");
+  fillLetterArray("mango");
   leds.begin();
   delay(100);
 }
@@ -138,10 +139,11 @@ void loop() {
 //-----------------------------------------------------------------------
 
 //Write lettering into lights
-void fillLetterArray(String input){
-  int len = sizeof(input);
+void fillLetterArray(char input[]){
+  int LetterArray[8][60] = {0};
+  size_t len = strlen(input);
   for(int i=0;i<len;i++){
-    fillLetterArrayHelper(HALF_LEDS-(len*4)+(8*i),input[i]);
+    fillLetterArrayHelper(HALF_LEDS-(len*4)+(8*i) + 1,input[i]);
   }
 }
 
@@ -217,17 +219,22 @@ void color_spectrum_half_wrap_setup() {
 
 void checkForMessage(){
   if (Serial1.available()){
+    Serial.println("available");
     incomingByte = Serial1.read();
     message += char(incomingByte);
     }else{
       if (message == ""){
         //do nothing
      }else{
+        Serial.println("message");
         Serial.println(message);
-        config1 = message;
-        if(config1 == "on"){
+        Serial.println(sizeof(message));
+        char config1[sizeof(message)];
+        strcpy(config1,message.c_str());
+        Serial.println(config1);
+        if(message == "on"){
           lightsOn = true;
-        }else if(config1 == "off"){
+        }else if(message == "off"){
           allLedsOff();
           leds.show();
           lightsOn = false;
