@@ -22,7 +22,7 @@ OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 ///////////////////////////////////
 
 ///////////////////////////////////
-int slaveNum = 1;                //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
+int slaveNum = 3;                //NEEDS TO BE CHANGED DEPENDING ON TEENSY 3.2 LABEL
 ///////////////////////////////////
 
 float beat_threshold = .96;
