@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <math.h>
+#include <ctype.h>
 #include <SD.h>
 #include <SerialFlash.h>
 #include "FastLED.h"
@@ -88,7 +89,8 @@ int audio_gain = 5000;
 
 // Bluetooth Stuff
 char config1[] = "";
-bool lightsOn = false;
+bool lights_on = false;
+bool lights_static = false;
 String message = "";
 int incomingByte;
 //----------------------------------------------------------------------
@@ -101,7 +103,7 @@ void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
   Serial.println("serial port open");
-  lightsOn = true;
+  lights_on = true;
   Serial1.print("AT+RESET");
   // Enable the audio shield and set the output volume
   AudioMemory(48);
@@ -120,8 +122,11 @@ void setup() {
 
 void loop() {
   checkForMessage();
-  if(lightsOn){
-    if (fft.available()){
+  if(lights_on){
+    if(lights_static){
+      color_spectrum_half_wrap_static();
+      leds.show();
+    }else if(fft.available()){
       color_spectrum_half_wrap(true);
       //beatDetectorUpdate();
       leds.show();
@@ -231,14 +236,18 @@ void checkForMessage(){
       //do nothing
     }else if(send_message){
       char config1[sizeof(message)];
-      strcpy(config1,message.c_str());
+      strcpy(config1,tolower(message.c_str()));
       Serial.println(config1);
-      if(message == "on"){
-        lightsOn = true;
-      }else if(message == "off"){
+      if(message == "_on"){
+        lights_on = true;
+      }else if(message == "_off"){
         allLedsOff();
         leds.show();
-        lightsOn = false;
+        lights_on = false;
+      }else if(message == "_static_on"){
+        lights_static = true;
+      }else if(message == "_static_off"){
+        lights_static = false;
       }else{
         fillLetterArray("       ");
         fillLetterArray("        ");
@@ -251,9 +260,7 @@ void checkForMessage(){
 }
 
 void allLedsOff(){
-  for(int i=0;i<NUM_LEDS;i++){
-    allLedsSetPixel(i,0,0,0);
-  }
+  for (int i = 0; i< HALF_LEDS; i++){
 }
 
 void color_spectrum_half_wrap(bool useEq){
@@ -310,6 +317,12 @@ void color_spectrum_half_wrap(bool useEq){
       // seems like we have too many arrays doing the same thing, 
       // should definitely clean this up
     }
+}
+
+void color_spectrum_half_wrap_static(){
+  for(x=0; x < NUM_LEDS; x++) {
+    color_spectrum_half_wrap_update(x,255);
+  }
 }
 
 
