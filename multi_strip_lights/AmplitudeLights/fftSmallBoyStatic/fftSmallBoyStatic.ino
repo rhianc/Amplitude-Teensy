@@ -34,7 +34,7 @@ AudioControlSGTL5000     audioShield;
 
 // Important Constants
 #define NUM_LEDS 60           // LEDs per strip
-#define BIN_WIDTH 1           // lights with the same frequency assignment
+#define BIN_WIDTH 30           // lights with the same frequency assignment
 
 // LED library initiation
 #include <OctoWS2811.h>
@@ -51,7 +51,6 @@ const int colorRange = 85;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
 const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
-bool send_message = false;
 CHSV hsv_leds[NUM_LEDS];
 CHSV fleds[NUM_FLEDS];
 
@@ -113,7 +112,7 @@ void setup() {
   // Start LED interface
   writeFrequencyBinsHorizontal();
   color_spectrum_half_wrap_setup();
-//  fillLetterArray("gobirds");
+  fillLetterArray("gobirds");
   leds.begin();
   delay(100);
 }
@@ -221,33 +220,30 @@ void checkForMessage(){
   if (Serial1.available()){
     Serial.println("available");
     incomingByte = Serial1.read();
-    if(char(incomingByte) == '!'){
-      send_message = true;
+    message += char(incomingByte);
     }else{
-      message += char(incomingByte);
-    }
-  }else{
-    if (message == ""){
-      //do nothing
-    }else if(send_message){
-      char config1[sizeof(message)];
-      strcpy(config1,message.c_str());
-      Serial.println(config1);
-      if(message == "on"){
-        lightsOn = true;
-      }else if(message == "off"){
-        allLedsOff();
-        leds.show();
-        lightsOn = false;
-      }else{
-        fillLetterArray("       ");
-        fillLetterArray("        ");
-        fillLetterArray(config1);
-      }
-      send_message = false;
-      message = "";
+      if (message == ""){
+        //do nothing
+     }else{
+        Serial.println("message");
+        Serial.println(message);
+        Serial.println(sizeof(message));
+        char config1[sizeof(message)];
+        strcpy(config1,message.c_str());
+        Serial.println(config1);
+        if(message == "on"){
+          lightsOn = true;
+        }else if(message == "off"){
+          allLedsOff();
+          leds.show();
+          lightsOn = false;
+        }else{
+          fillLetterArray("       ");
+          fillLetterArray(config1);
+        }
+        message = "";
+     }
    }
- }
 }
 
 void allLedsOff(){
