@@ -22,6 +22,7 @@ DMAMEM int displayMemory[NUM_LEDS*6];
 int drawingMemory[NUM_LEDS*6];
 const int config = WS2811_GRB | WS2811_800kHz;
 OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
+int placement[8] = {4,5,6,7,3,2,1,0};
 
 //----------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
@@ -31,15 +32,15 @@ OctoWS2811 leds(NUM_LEDS, displayMemory, drawingMemory, config);
 void setup() {
   // Enable Serial
   Serial.begin(9600);
-  leds.begin();
   delay(100);
-  test();
+  leds.begin();
   leds.show();
 }
 
 void loop() {
   Serial.println("hello");
-  delay(10000);
+  delay(1000);
+  test();
   leds.show();
 //  checkForMessage();
 //  if(lightsOn){
@@ -64,7 +65,13 @@ void loop() {
 void test(){
   for (int x = 0; x < 8; x++){ 
     for(int i=0;i<NUM_LEDS;i++){
-      leds.setPixel(x*NUM_LEDS+i, 255-(x*20), 0, x*20);
+      if(placement[x] < 4){
+        leds.setPixel(x*NUM_LEDS+i, 255-(placement[x]*60), placement[x]*60, 0);
+      }else if(placement[x] < 7){
+        leds.setPixel(x*NUM_LEDS+i,0, 255-((placement[x]-4)*80), (placement[x]-4)*80);
+      }else{
+        leds.setPixel(x*NUM_LEDS+i,255, 0, 255);
+      }
     }
   }
 }

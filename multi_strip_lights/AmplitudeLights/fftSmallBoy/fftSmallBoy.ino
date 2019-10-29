@@ -239,12 +239,12 @@ void checkForMessage(){
       char config1[sizeof(message)];
       strcpy(config1,message.c_str());
       Serial.println(config1);
-      if(message == "_on"){
-        lights_on = true;
-      }else if(message == "_off"){
-        allLedsOff();
-        leds.show();
-        lights_on = false;
+       if(message == "_onoff"){
+        if(lights_on){
+          allLedsOff();
+          leds.show();
+        }
+        lights_on = !lights_on;
       }else if(message == "_static"){
         lights_static = !lights_static;
       }else{
