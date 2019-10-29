@@ -84,12 +84,12 @@ int pixel_map[ALPHABET_LEN][8] = {{00,14,22,41,77,41,41,00},{00,76,41,76,41,41,7
 int LetterArray[8][60] = {0};
 int placement[8] = {4,5,6,7,3,2,1,0};
 
-int audio_gain = 5000;
+int audio_gain = 1000;
 
 
 // Bluetooth Stuff
 char config1[] = "";
-bool lights_on = false;
+bool lights_on = true;
 bool lights_static = false;
 String message = "";
 int incomingByte;
@@ -226,6 +226,7 @@ void checkForMessage(){
   if (Serial1.available()){
     Serial.println("available");
     incomingByte = Serial1.read();
+    Serial.println(char(incomingByte));
     if(char(incomingByte) == '!'){
       send_message = true;
     }else{
@@ -236,7 +237,7 @@ void checkForMessage(){
       //do nothing
     }else if(send_message){
       char config1[sizeof(message)];
-      strcpy(config1,tolower(message.c_str()));
+      strcpy(config1,message.c_str());
       Serial.println(config1);
       if(message == "_on"){
         lights_on = true;
@@ -244,10 +245,8 @@ void checkForMessage(){
         allLedsOff();
         leds.show();
         lights_on = false;
-      }else if(message == "_static_on"){
-        lights_static = true;
-      }else if(message == "_static_off"){
-        lights_static = false;
+      }else if(message == "_static"){
+        lights_static = !lights_static;
       }else{
         fillLetterArray("       ");
         fillLetterArray("        ");
@@ -260,7 +259,11 @@ void checkForMessage(){
 }
 
 void allLedsOff(){
-  for (int i = 0; i< HALF_LEDS; i++){
+  Serial.println("all Leds Off");
+  for(int i=0;i<NUM_LEDS;i++){
+    allLedsSetPixel(i,0,0,0);
+  }
+  leds.show();
 }
 
 void color_spectrum_half_wrap(bool useEq){
@@ -320,7 +323,7 @@ void color_spectrum_half_wrap(bool useEq){
 }
 
 void color_spectrum_half_wrap_static(){
-  for(x=0; x < NUM_LEDS; x++) {
+  for(int x=0; x < NUM_LEDS; x++) {
     color_spectrum_half_wrap_update(x,255);
   }
 }
@@ -421,10 +424,15 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     float white;
     // not really sure why pureC matters, might change decay type
     bool pureC = true;
-
-    red = r*(1-((8*(1./12)) +((x%4)*(1./11.1))));
-    green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
-    blue = b*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+    if(lights_static){
+      red = r;
+      green = g;
+      blue = b;
+    }else{
+      red = r*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+      green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+      blue = b*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+    }
 
     float colors[3] = {red, green, blue};
 
