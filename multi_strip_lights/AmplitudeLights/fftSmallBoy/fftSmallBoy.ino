@@ -1,6 +1,7 @@
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <stdio.h>
 #include <string>
 #include <cstring>
 #include <math.h>
@@ -84,7 +85,7 @@ int pixel_map[ALPHABET_LEN][8] = {{00,14,22,41,77,41,41,00},{00,76,41,76,41,41,7
 int LetterArray[8][60] = {0};
 int placement[8] = {4,5,6,7,3,2,1,0};
 
-int audio_gain = 1000;
+float audio_gain = 0.2;
 
 
 // Bluetooth Stuff
@@ -92,7 +93,9 @@ char config1[] = "";
 bool lights_on = true;
 bool lights_static = false;
 String message = "";
-int incomingByte;
+int incoming_byte;
+bool underscore = false;
+char message_gain[5];
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
@@ -225,12 +228,12 @@ void color_spectrum_half_wrap_setup() {
 void checkForMessage(){
   if (Serial1.available()){
     Serial.println("available");
-    incomingByte = Serial1.read();
-    Serial.println(char(incomingByte));
-    if(char(incomingByte) == '!'){
+    incoming_byte = Serial1.read();
+    Serial.println(char(incoming_byte));
+    if(char(incoming_byte) == '!'){
       send_message = true;
     }else{
-      message += char(incomingByte);
+      message += char(incoming_byte);
     }
   }else{
     if (message == ""){
@@ -248,9 +251,19 @@ void checkForMessage(){
       }else if(message == "_static"){
         lights_static = !lights_static;
       }else{
-        fillLetterArray("       ");
-        fillLetterArray("        ");
-        fillLetterArray(config1);
+        memcpy(message_gain,config1,5);
+        if(strcmp(message_gain,"gain_") == 0){
+          Serial.println(message_gain);
+          memcpy(message_gain,config1 + 5,4);
+          Serial.println(message_gain);
+          audio_gain = atof(message_gain);
+          Serial.println(audio_gain);
+          Serial.println("gain");
+        }else{
+          fillLetterArray("       ");
+          fillLetterArray("        ");
+          fillLetterArray(config1);
+        }
       }
       send_message = false;
       message = "";
@@ -369,7 +382,7 @@ float read_fft(unsigned int binFirst, unsigned int binLast) {
     if (binLast > 511) binLast = 511;
     uint32_t sum = 0;
     do {
-      sum +=audio_gain*fft.read(binFirst++);
+      sum +=(audio_gain*5000.0)*fft.read(binFirst++);
       //Serial.println(sum);
     } while (binFirst <= binLast);
     return (float)sum * (1.0 / 16384.0);
@@ -425,9 +438,9 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     // not really sure why pureC matters, might change decay type
     bool pureC = true;
     if(lights_static){
-      red = r;
-      green = g;
-      blue = b;
+      red = round(r*audio_gain);
+      green = round(g*audio_gain);
+      blue = round(b*audio_gain);
     }else{
       red = r*(1-((8*(1./12)) +((x%4)*(1./11.1))));
       green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
@@ -452,4 +465,14 @@ void allLedsSetPixel(int i, int r, int g, int b) {
       leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
     }
   }
+}
+
+void substring(char s[], char sub[], int p, int l) {
+   int c = 0;
+   
+   while (c < l) {
+      sub[c] = s[p+c-1];
+      c++;
+   }
+   sub[c] = '\0';
 }
