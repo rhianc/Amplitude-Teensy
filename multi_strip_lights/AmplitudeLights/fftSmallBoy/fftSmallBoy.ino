@@ -240,9 +240,10 @@ void checkForMessage(){
       //do nothing
     }else if(send_message){
       char config1[sizeof(message)];
+      Serial.println(config1);
       strcpy(config1,message.c_str());
       Serial.println(config1);
-       if(message == "_onoff"){
+      if(message == "_onoff"){
         if(lights_on){
           allLedsOff();
           leds.show();
@@ -260,9 +261,13 @@ void checkForMessage(){
           Serial.println(audio_gain);
           Serial.println("gain");
         }else{
-          fillLetterArray("       ");
-          fillLetterArray("        ");
-          fillLetterArray(config1);
+          size_t len = strlen(config1);
+          Serial.println(len);
+          if(len <= 7){
+            fillLetterArray("       ");
+            fillLetterArray("        ");
+            fillLetterArray(config1);
+          }
         }
       }
       send_message = false;
