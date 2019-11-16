@@ -1,7 +1,11 @@
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
+#include <stdio.h>
+#include <string>
+#include <cstring>
 #include <math.h>
+#include <ctype.h>
 #include <SD.h>
 #include <SerialFlash.h>
 #include "FastLED.h"
@@ -49,6 +53,7 @@ const int colorRange = 85;
 const int startColor = 0;
 const int HALF_LEDS = floor(NUM_LEDS/2);
 const int NUM_FLEDS = ceil((255./colorRange) * NUM_LEDS);
+bool send_message = false;
 CHSV hsv_leds[NUM_LEDS];
 CHSV fleds[NUM_FLEDS];
 
@@ -71,6 +76,26 @@ float startTimer = millis();
 
 bool beatDetected;
 
+const int ALPHABET_LEN = 27;
+char alphabet[ALPHABET_LEN] = "abcdefghijklmnopqrstuvwxyz ";
+//2 digits of OCTAL numbers. need to be broken down into binary. each number in a lettrs array represents a row. 6 binary digits in a row, 8 rows. Each letter is 6 columns of 8 lights, which limits small display to 10 letters.
+//                                 A{14,22,41,41,77,41,41,41}B                         C                         D                         E                         F                         G                         H                         I                         J                         K                         L                         M                         N                         O                         P                         Q                         R                         S                         T                         U                         V                         W                         X                         Y                         Z
+//int pixel_map[ALPHABET_LEN][8] = {{14,22,41,41,77,41,41,41},{76,41,41,76,76,41,41,76},{77,40,40,40,40,40,40,77},{76,43,43,43,43,43,43,76},{77,40,40,77,77,40,40,77},{77,40,40,77,40,40,40,40},{77,40,40,40,47,41,41,77},{63,63,63,77,77,63,63,63},{77,14,14,14,14,14,14,77},{77,14,14,14,14,54,74,30},{61,62,64,70,70,64,62,61},{60,60,60,60,60,60,77,77},{36,77,55,55,55,55,55,55},{41,61,71,55,55,47,43,41},{36,63,63,63,63,63,63,36},{76,63,63,76,60,60,60,60},{36,63,63,63,73,67,76,75},{77,63,63,77,74,66,63,63},{77,60,60,74,17,03,03,77},{77,77,14,14,14,14,14,14},{63,63,63,63,63,63,77,36},{63,63,22,22,36,36,14,14},{55,55,55,55,55,55,77,36},{63,36,36,14,14,36,36,63},{63,63,36,36,14,14,14,14},{77,03,06,14,14,30,60,77}};
+int pixel_map[ALPHABET_LEN][8] = {{00,14,22,41,77,41,41,00},{00,76,41,76,41,41,76,00},{00,77,40,40,40,40,77,00},{00,74,47,43,43,47,74,00},{00,77,40,77,40,40,77,00},{00,77,40,77,40,40,40,00},{00,77,40,40,47,41,77,00},{00,63,63,77,77,63,63,00},{00,77,14,14,14,14,77,00},{00,77,14,14,54,74,30,00},{00,63,66,74,74,66,63,00},{00,60,60,60,60,60,77,00},{00,63,77,55,41,41,41,00},{00,41,61,51,45,43,41,00},{00,36,63,63,63,63,36,00},{00,76,63,76,60,60,60,00},{00,36,63,63,63,67,35,00},{00,77,63,67,74,66,63,00},{00,77,60,74,17,03,77,00},{00,77,14,14,14,14,14,00},{00,63,63,63,63,63,36,00},{00,63,22,22,22,36,14,00},{00,55,55,55,55,55,77,00},{00,63,22,14,14,22,63,00},{00,63,63,36,14,14,14,00},{00,77,06,14,14,30,77,00},{00,00,00,00,00,00,00,00}};
+int LetterArray[8][60] = {0};
+int placement[8] = {4,5,6,7,3,2,1,0};
+
+float audio_gain = 0.2;
+
+
+// Bluetooth Stuff
+char config1[] = "";
+bool lights_on = true;
+bool lights_static = false;
+String message = "";
+int incoming_byte;
+bool underscore = false;
+char message_gain[5];
 //----------------------------------------------------------------------
 //----------------------------CORE PROGRAM------------------------------
 //----------------------------------------------------------------------
@@ -78,9 +103,11 @@ bool beatDetected;
 // Run setup once
 void setup() {
   // Enable Serial
-  Serial.begin(2000000);
+  Serial.begin(9600);
+  Serial1.begin(9600);
   Serial.println("serial port open");
-  
+  lights_on = true;
+  Serial1.print("AT+RESET");
   // Enable the audio shield and set the output volume
   AudioMemory(48);
   audioShield.enable();
@@ -91,22 +118,27 @@ void setup() {
   // Start LED interface
   writeFrequencyBinsHorizontal();
   color_spectrum_half_wrap_setup();
-
+//  fillLetterArray("gobirds");
   leds.begin();
-
   delay(100);
 }
 
 void loop() {
-  if (fft.available()){
-    color_spectrum_half_wrap(true);
-    beatDetectorUpdate();
-    leds.show();
-  }
-  timer = millis();
-  if (timer-startTimer > 100){
-    moving_color_spectrum_half_wrap(1);   // modifies color mapping
-    startTimer = millis();
+  checkForMessage();
+  if(lights_on){
+    if(lights_static){
+      color_spectrum_half_wrap_static();
+      leds.show();
+    }else if(fft.available()){
+      color_spectrum_half_wrap(true);
+      //beatDetectorUpdate();
+      leds.show();
+    }
+    timer = millis();
+    if (timer-startTimer > 100){
+      moving_color_spectrum_half_wrap(1);   // modifies color mapping
+      startTimer = millis();
+    }
   }
 }
 
@@ -114,6 +146,34 @@ void loop() {
 //-----------------------------------------------------------------------
 //----------------------------SETUP FUNCTIONS----------------------------
 //-----------------------------------------------------------------------
+
+//Write lettering into lights
+void fillLetterArray(char input[]){
+  size_t len = strlen(input);
+  for(int i=0;i<len;i++){
+    fillLetterArrayHelper(HALF_LEDS-(len*4)+(8*i) + 1,input[i]);
+  }
+}
+
+void fillLetterArrayHelper(int index_start, char letter){
+  int row;
+  int left;
+  int right;
+  const char *ptr = strchr(alphabet, letter);
+    if(ptr) {
+       int index = ptr - alphabet;
+       // do something
+       for(int j=0;j<8;j++){
+        row = pixel_map[index][j];
+        left = floor(row/10);
+        right = row%10;
+        int pixels[6] = {(left/4)%2,(left/2)%2,left%2,(right/4)%2,(right/2)%2,right%2};
+        for(int k=0;k<6;k++){
+          LetterArray[j][index_start+k] = pixels[k];
+        }
+       }
+    }
+}
 
 //Dynamically create frequency bin volume array for NUM_BINS
 void writeFrequencyBinsHorizontal(){
@@ -164,6 +224,60 @@ void color_spectrum_half_wrap_setup() {
 //-----------------------------------------------------------------------
 //----------------------------LOOP FUNCTIONS----------------------------
 //-----------------------------------------------------------------------
+
+void checkForMessage(){
+  if (Serial1.available()){
+    Serial.println("available");
+    incoming_byte = Serial1.read();
+    Serial.println(char(incoming_byte));
+    if(char(incoming_byte) == '!'){
+      send_message = true;
+    }else{
+      message += char(incoming_byte);
+    }
+  }else{
+    if (message == ""){
+      //do nothing
+    }else if(send_message){
+      char config1[sizeof(message)];
+      strcpy(config1,message.c_str());
+      Serial.println(config1);
+       if(message == "_onoff"){
+        if(lights_on){
+          allLedsOff();
+          leds.show();
+        }
+        lights_on = !lights_on;
+      }else if(message == "_static"){
+        lights_static = !lights_static;
+      }else{
+        memcpy(message_gain,config1,5);
+        if(strcmp(message_gain,"gain_") == 0){
+          Serial.println(message_gain);
+          memcpy(message_gain,config1 + 5,4);
+          Serial.println(message_gain);
+          audio_gain = atof(message_gain);
+          Serial.println(audio_gain);
+          Serial.println("gain");
+        }else{
+          fillLetterArray("       ");
+          fillLetterArray("        ");
+          fillLetterArray(config1);
+        }
+      }
+      send_message = false;
+      message = "";
+   }
+ }
+}
+
+void allLedsOff(){
+  Serial.println("all Leds Off");
+  for(int i=0;i<NUM_LEDS;i++){
+    allLedsSetPixel(i,0,0,0);
+  }
+  leds.show();
+}
 
 void color_spectrum_half_wrap(bool useEq){
   unsigned int x, freqBin;
@@ -221,6 +335,12 @@ void color_spectrum_half_wrap(bool useEq){
     }
 }
 
+void color_spectrum_half_wrap_static(){
+  for(int x=0; x < NUM_LEDS; x++) {
+    color_spectrum_half_wrap_update(x,255);
+  }
+}
+
 
 void color_spectrum_half_wrap_update(int index, float level) {
   if(index >= NUM_LEDS || index < 0){
@@ -262,7 +382,7 @@ float read_fft(unsigned int binFirst, unsigned int binLast) {
     if (binLast > 511) binLast = 511;
     uint32_t sum = 0;
     do {
-      sum +=1000*fft.read(binFirst++);
+      sum +=(audio_gain*5000.0)*fft.read(binFirst++);
       //Serial.println(sum);
     } while (binFirst <= binLast);
     return (float)sum * (1.0 / 16384.0);
@@ -314,12 +434,18 @@ void allLedsSetPixel(int i, int r, int g, int b) {
     float red;
     float green;
     float blue;
+    float white;
     // not really sure why pureC matters, might change decay type
     bool pureC = true;
-
-    red = r*(1-((8*(1./12)) +((x%4)*(1./11.1))));
-    green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
-    blue = b*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+    if(lights_static){
+      red = round(r*audio_gain);
+      green = round(g*audio_gain);
+      blue = round(b*audio_gain);
+    }else{
+      red = r*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+      green = g*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+      blue = b*(1-((8*(1./12)) +((x%4)*(1./11.1))));
+    }
 
     float colors[3] = {red, green, blue};
 
@@ -332,6 +458,21 @@ void allLedsSetPixel(int i, int r, int g, int b) {
         colors[c] = 0;
       }
     }   
-    leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
+    if(LetterArray[placement[x]][i] == 1){
+      white = (red +green + blue)/3.;
+      leds.setPixel(x*NUM_LEDS+i, 0, 0, 0);
+    }else{
+      leds.setPixel(x*NUM_LEDS+i, colors[0], colors[1], colors[2]);
+    }
   }
+}
+
+void substring(char s[], char sub[], int p, int l) {
+   int c = 0;
+   
+   while (c < l) {
+      sub[c] = s[p+c-1];
+      c++;
+   }
+   sub[c] = '\0';
 }
